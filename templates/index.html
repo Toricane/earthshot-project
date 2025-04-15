@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Learning Navigator</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <style>
+            :root {
+                --primary-color: #4361ee;
+                --primary-hover: #3a56d4;
+                --secondary-color: #3f37c9;
+                --accent-color: #4cc9f0;
+                --light-bg: #f8f9fa;
+                --dark-bg: #212529;
+                --light-text: #f8f9fa;
+                --dark-text: #212529;
+                --user-msg-bg: #e9ecef;
+                --assistant-msg-bg: #d8eefe;
+                --transition-speed: 0.3s;
+                --border-radius: 0.5rem;
+            }
+
+            [data-bs-theme="dark"] {
+                --light-bg: #212529;
+                --dark-bg: #f8f9fa;
+                --light-text: #212529;
+                --dark-text: #f8f9fa;
+                --user-msg-bg: #3a3f44;
+                --assistant-msg-bg: #2b3a55;
+            }
+
+            body {
+                padding-top: 2rem;
+                background-color: var(--light-bg);
+                transition: background-color var(--transition-speed);
+                min-height: 100vh;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .app-container {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            .app-header {
+                margin-bottom: 2rem;
+                text-align: center;
+            }
+
+            .app-title {
+                font-weight: 700;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
+
+            .app-subtitle {
+                font-weight: 400;
+                opacity: 0.8;
+                margin-bottom: 2rem;
+            }
+
+            .card {
+                border-radius: var(--border-radius);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                border: none;
+                transition: all var(--transition-speed);
+                margin-bottom: 2rem;
+            }
+
+            .card-header {
+                border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+                background-color: var(--primary-color);
+                color: white;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn-primary {
+                background-color: var(--primary-color);
+                border-color: var(--primary-color);
+            }
+
+            .btn-primary:hover {
+                background-color: var(--primary-hover);
+                border-color: var(--primary-hover);
+            }
+
+            .btn-success {
+                background-color: var(--secondary-color);
+                border-color: var(--secondary-color);
+            }
+
+            .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            }
+
+            /* Chat Container Styles */
+            #chat-container {
+                max-height: 600px;
+                height: 60vh;
+                overflow-y: auto;
+                border: 1px solid #dee2e6;
+                border-radius: var(--border-radius);
+                padding: 1rem;
+                background-color: white;
+                margin-bottom: 1rem;
+                scroll-behavior: smooth;
+            }
+
+            [data-bs-theme="dark"] #chat-container {
+                background-color: #2b2b2b;
+            }
+
+            .message {
+                margin-bottom: 1rem;
+                padding: 0.75rem 1rem;
+                border-radius: var(--border-radius);
+                position: relative;
+                max-width: 80%;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                animation: fadeIn 0.3s ease-in-out;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .user-message {
+                background-color: var(--user-msg-bg);
+                text-align: right;
+                margin-left: auto;
+                border-bottom-right-radius: 0;
+            }
+
+            .assistant-message {
+                background-color: var(--assistant-msg-bg);
+                margin-right: auto;
+                border-bottom-left-radius: 0;
+            }
+
+            .typing-indicator {
+                display: flex;
+                align-items: center;
+                padding: 0.5rem 1rem;
+                background-color: var(--assistant-msg-bg);
+                border-radius: var(--border-radius);
+                margin-bottom: 1rem;
+                max-width: fit-content;
+            }
+
+            .typing-indicator span {
+                height: 8px;
+                width: 8px;
+                background-color: #555;
+                border-radius: 50%;
+                display: inline-block;
+                margin: 0 2px;
+                animation: typing 1.4s ease-in-out infinite;
+            }
+
+            .typing-indicator span:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+
+            .typing-indicator span:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+            @keyframes typing {
+                0% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-5px);
+                }
+                100% {
+                    transform: translateY(0);
+                }
+            }
+
+            /* Progress indicator */
+            .progress-indicator {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 2rem;
+                position: relative;
+            }
+
+            .progress-indicator::before {
+                content: "";
+                position: absolute;
+                top: 10px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background-color: #dee2e6;
+                z-index: 1;
+            }
+
+            .progress-step {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 33.33%;
+            }
+
+            .step-icon {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                background-color: white;
+                border: 2px solid #dee2e6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                margin-bottom: 0.5rem;
+            }
+
+            .step-active .step-icon {
+                background-color: var(--primary-color);
+                border-color: var(--primary-color);
+                color: white;
+            }
+
+            .step-complete .step-icon {
+                background-color: #198754;
+                border-color: #198754;
+                color: white;
+            }
+
+            .step-label {
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-align: center;
+            }
+
+            /* Roadmap Styles */
+            .roadmap-container {
+                position: relative;
+            }
+
+            .roadmap-item {
+                border-left: 3px solid var(--primary-color);
+                padding: 1rem 1.5rem;
+                margin-bottom: 1.5rem;
+                position: relative;
+                transition: all var(--transition-speed);
+            }
+
+            .roadmap-item:hover {
+                background-color: rgba(67, 97, 238, 0.05);
+                transform: translateX(5px);
+            }
+
+            .roadmap-item::before {
+                content: "";
+                position: absolute;
+                left: -10px;
+                top: 0;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+            }
+
+            .roadmap-item h5 {
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
+
+            /* Results page */
+            .result-section {
+                margin-bottom: 2rem;
+            }
+
+            .result-section h4 {
+                margin-bottom: 1rem;
+                border-bottom: 2px solid var(--primary-color);
+                padding-bottom: 0.5rem;
+                display: inline-block;
+            }
+
+            .list-group-item {
+                border-left: 3px solid var(--primary-color);
+                margin-bottom: 0.5rem;
+                border-radius: var(--border-radius);
+            }
+
+            /* Toggle Switch */
+            .theme-switch-wrapper {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                display: flex;
+                align-items: center;
+            }
+
+            .theme-switch {
+                display: inline-block;
+                height: 26px;
+                position: relative;
+                width: 50px;
+            }
+
+            .theme-switch input {
+                display: none;
+            }
+
+            .slider {
+                background-color: #ccc;
+                bottom: 0;
+                cursor: pointer;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
+                transition: 0.4s;
+                border-radius: 34px;
+            }
+
+            .slider:before {
+                background-color: white;
+                bottom: 4px;
+                content: "";
+                height: 18px;
+                left: 4px;
+                position: absolute;
+                transition: 0.4s;
+                width: 18px;
+                border-radius: 50%;
+            }
+
+            input:checked + .slider {
+                background-color: var(--primary-color);
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(24px);
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 1.5rem;
+            }
+
+            /* Skills Tree View */
+            /* Replace the existing Skills Tree View CSS */
+            .tree-view-toggle {
+                margin-bottom: 1rem;
+            }
+
+            .skills-tree {
+                display: none;
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                height: 500px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            [data-bs-theme="dark"] .skills-tree {
+                background-color: #2b2b2b;
+            }
+
+            .node circle {
+                fill: var(--primary-color);
+                stroke: #fff;
+                stroke-width: 2px;
+            }
+
+            .node text {
+                font-size: 12px;
+                font-family: sans-serif;
+            }
+
+            .link {
+                fill: none;
+                stroke: #ccc;
+                stroke-width: 2px;
+            }
+
+            .node-tooltip {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+                max-width: 200px;
+                z-index: 100;
+            }
+
+            /* Knowledge Graph Styles */
+            .knowledge-graph {
+                height: 400px;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 2rem;
+            }
+
+            [data-bs-theme="dark"] .knowledge-graph {
+                background-color: #2b2b2b;
+            }
+
+            .knowledge-node {
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .knowledge-node:hover {
+                transform: scale(1.1);
+            }
+
+            .knowledge-list {
+                margin-bottom: 2rem;
+            }
+
+            .node-proficiency-high {
+                fill: #198754;
+            }
+
+            .node-proficiency-medium {
+                fill: #fd7e14;
+            }
+
+            .node-proficiency-low {
+                fill: #6c757d;
+            }
+
+            /* Roadmap Diagram Styles */
+            .roadmap-diagram {
+                display: none;
+                height: 600px;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                position: relative;
+                overflow: auto;
+                padding: 2rem;
+            }
+
+            [data-bs-theme="dark"] .roadmap-diagram {
+                background-color: #2b2b2b;
+            }
+
+            .roadmap-stage {
+                margin-bottom: 3rem;
+                position: relative;
+            }
+
+            .roadmap-stage-title {
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: var(--primary-color);
+                border-bottom: 2px solid var(--primary-color);
+                display: inline-block;
+                padding-bottom: 0.25rem;
+            }
+
+            .roadmap-stage-items {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1.5rem;
+            }
+
+            .roadmap-node {
+                width: 220px;
+                padding: 1rem;
+                border-radius: var(--border-radius);
+                background-color: white;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                position: relative;
+                transition: all 0.3s;
+            }
+
+            [data-bs-theme="dark"] .roadmap-node {
+                background-color: #424242;
+                color: #e0e0e0;
+            }
+
+            .roadmap-node:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            }
+
+            .roadmap-node h5 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+                color: var(--primary-color);
+            }
+
+            .roadmap-node-description {
+                font-size: 0.875rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .roadmap-node-prereq {
+                font-size: 0.75rem;
+                color: #6c757d;
+                margin-top: 0.5rem;
+            }
+
+            .roadmap-arrows svg {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .roadmap-arrow {
+                fill: none;
+                stroke: #adb5bd;
+                stroke-width: 1.5px;
+                marker-end: url(#arrowhead);
+            }
+
+            /* Add to the style section */
+            .link {
+                fill: none;
+                stroke: #aaa;
+                stroke-width: 1.5px;
+                transition: stroke 0.2s;
+            }
+
+            .node-tooltip {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+                max-width: 250px;
+                z-index: 100;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+
+            .roadmap-arrow {
+                fill: none;
+                stroke: #adb5bd;
+                stroke-width: 2px;
+                stroke-opacity: 0.7;
+                marker-end: url(#arrowhead);
+                transition: stroke-opacity 0.2s;
+            }
+
+            .roadmap-arrow:hover {
+                stroke-opacity: 1;
+            }
+
+            /* Improve roadmap diagram spacing */
+            .roadmap-stage-items {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .roadmap-node {
+                width: 220px;
+                padding: 1rem;
+                border-radius: var(--border-radius);
+                background-color: white;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                position: relative;
+                transition: all 0.3s;
+                z-index: 2; /* Ensure nodes are above arrows */
+            }
+
+            /* Mobile improvements */
+            @media (max-width: 768px) {
+                .user-message,
+                .assistant-message {
+                    max-width: 90%;
+                }
+
+                .action-buttons {
+                    flex-direction: column;
+                }
+
+                .roadmap-item {
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle" />
+                <span class="slider"></span>
+            </label>
+            <span class="ms-2" id="theme-label">Dark Mode</span>
+        </div>
+
+        <div class="container app-container">
+            <div class="app-header">
+                <h1 class="app-title">Learning Navigator</h1>
+                <p class="app-subtitle">
+                    Your AI-powered guide to personalized learning
+                </p>
+            </div>
+
+            <div class="progress-indicator">
+                <div class="progress-step step-active" id="step-setup">
+                    <div class="step-icon">1</div>
+                    <div class="step-label">Setup</div>
+                </div>
+                <div class="progress-step" id="step-diagnostic">
+                    <div class="step-icon">2</div>
+                    <div class="step-label">Diagnostic</div>
+                </div>
+                <div class="progress-step" id="step-results">
+                    <div class="step-icon">3</div>
+                    <div class="step-label">Results</div>
+                </div>
+            </div>
+
+            <div id="setup-form">
+                <div class="card">
+                    <div
+                        class="card-header d-flex justify-content-between align-items-center"
+                    >
+                        <h3 class="mb-0">Start Your Learning Journey</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="subject" class="form-label"
+                                >What subject do you want to learn?</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="subject"
+                                placeholder="e.g., Mathematics, Physics, Programming"
+                            />
+                        </div>
+                        <div class="mb-3">
+                            <label for="goal" class="form-label"
+                                >What is your learning goal?</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="goal"
+                                placeholder="e.g., Pass Grade 8 Math, Learn Python basics"
+                            />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="age" class="form-label"
+                                    >Age (optional)</label
+                                >
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="age"
+                                />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="grade" class="form-label"
+                                    >Current Grade (optional)</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="grade"
+                                />
+                            </div>
+                        </div>
+                        <button id="start-diagnostic" class="btn btn-primary">
+                            <i class="bi bi-play-fill"></i> Start Diagnostic
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-section" style="display: none">
+                <div class="card">
+                    <div
+                        class="card-header d-flex justify-content-between align-items-center"
+                    >
+                        <h3 class="mb-0">Diagnostic Assessment</h3>
+                        <div>
+                            <button
+                                id="restart-diagnostic"
+                                class="btn btn-outline-light me-2"
+                            >
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <button
+                                id="complete-diagnostic"
+                                class="btn btn-light text-primary"
+                            >
+                                <i class="bi bi-check-circle-fill"></i> Complete
+                                Assessment
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-container"></div>
+
+                        <div
+                            class="typing-indicator"
+                            id="typing-indicator"
+                            style="display: none"
+                        >
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                id="user-input"
+                                class="form-control"
+                                placeholder="Type your answer..."
+                            />
+                            <button id="send-message" class="btn btn-primary">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="result-container" style="display: none">
+                <div class="card">
+                    <div
+                        class="card-header d-flex justify-content-between align-items-center"
+                    >
+                        <h3 class="mb-0">Your Diagnostic Results</h3>
+                        <div class="action-buttons-header">
+                            <button
+                                id="download-pdf"
+                                class="btn btn-outline-light"
+                            >
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button
+                                id="share-results"
+                                class="btn btn-outline-light"
+                            >
+                                <i class="bi bi-share"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill"></i> Your
+                            assessment is complete! Below is your personalized
+                            learning roadmap.
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Knowledge</h4>
+                            <div class="knowledge-view-toggle mb-3">
+                                <div class="btn-group" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary active"
+                                        id="knowledge-graph-btn"
+                                    >
+                                        Knowledge Map
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary"
+                                        id="knowledge-list-btn"
+                                    >
+                                        List View
+                                    </button>
+                                </div>
+                            </div>
+                            <div
+                                id="knowledge-graph"
+                                class="knowledge-graph"
+                            ></div>
+                            <div
+                                id="knowledge-list"
+                                class="knowledge-list"
+                                style="display: none"
+                            ></div>
+                        </div>
+
+                        <div class="row result-section">
+                            <div class="col-md-6">
+                                <h4>Your Strengths</h4>
+                                <ul id="strengths-list" class="list-group"></ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Areas to Improve</h4>
+                                <ul id="gaps-list" class="list-group"></ul>
+                            </div>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Personalized Learning Roadmap</h4>
+
+                            <div class="tree-view-toggle">
+                                <div class="btn-group" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary active"
+                                        id="list-view-btn"
+                                    >
+                                        List View
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary"
+                                        id="diagram-view-btn"
+                                    >
+                                        Diagram View
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                id="roadmap-container"
+                                class="roadmap-container"
+                            ></div>
+                            <div
+                                id="roadmap-diagram"
+                                class="roadmap-diagram"
+                            ></div>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Recommendations</h4>
+                            <ul
+                                id="recommendations-list"
+                                class="list-group"
+                            ></ul>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Interests</h4>
+                            <p
+                                id="interests-display"
+                                class="p-3 bg-light rounded"
+                            ></p>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button
+                                id="download-roadmap"
+                                class="btn btn-primary"
+                            >
+                                <i class="bi bi-download"></i> Download Roadmap
+                            </button>
+                            <button
+                                id="print-roadmap"
+                                class="btn btn-outline-primary"
+                            >
+                                <i class="bi bi-printer"></i> Print
+                            </button>
+                            <button
+                                id="new-assessment"
+                                class="btn btn-outline-secondary"
+                            >
+                                <i class="bi bi-plus-circle"></i> New Assessment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            let sessionId = null;
+            let diagnosticResults = null;
+
+            // Theme switcher
+            const themeToggle = document.getElementById("theme-toggle");
+            const themeLabel = document.getElementById("theme-label");
+
+            themeToggle.addEventListener("change", function () {
+                if (this.checked) {
+                    document.documentElement.setAttribute(
+                        "data-bs-theme",
+                        "dark"
+                    );
+                    themeLabel.textContent = "Light Mode";
+                } else {
+                    document.documentElement.setAttribute(
+                        "data-bs-theme",
+                        "light"
+                    );
+                    themeLabel.textContent = "Dark Mode";
+                }
+            });
+
+            // Progress steps functionality
+            function updateProgressSteps(currentStep) {
+                document.querySelectorAll(".progress-step").forEach((step) => {
+                    step.classList.remove("step-active", "step-complete");
+                });
+
+                if (currentStep === "setup") {
+                    document
+                        .getElementById("step-setup")
+                        .classList.add("step-active");
+                } else if (currentStep === "diagnostic") {
+                    document
+                        .getElementById("step-setup")
+                        .classList.add("step-complete");
+                    document
+                        .getElementById("step-diagnostic")
+                        .classList.add("step-active");
+                } else if (currentStep === "results") {
+                    document
+                        .getElementById("step-setup")
+                        .classList.add("step-complete");
+                    document
+                        .getElementById("step-diagnostic")
+                        .classList.add("step-complete");
+                    document
+                        .getElementById("step-results")
+                        .classList.add("step-active");
+                }
+            }
+
+            // Start diagnostic
+            document
+                .getElementById("start-diagnostic")
+                .addEventListener("click", function () {
+                    const subject = document.getElementById("subject").value;
+                    const goal = document.getElementById("goal").value;
+                    const age = document.getElementById("age").value;
+                    const grade = document.getElementById("grade").value;
+
+                    if (!subject || !goal) {
+                        showAlert(
+                            "Please enter both subject and goal",
+                            "danger"
+                        );
+                        return;
+                    }
+
+                    // Update progress indicator
+                    updateProgressSteps("diagnostic");
+
+                    // Show typing indicator while waiting for response
+                    document.getElementById("setup-form").style.display =
+                        "none";
+                    document.getElementById("chat-section").style.display =
+                        "block";
+                    showTypingIndicator();
+
+                    fetch("/api/start-diagnostic", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            subject: subject,
+                            goal: goal,
+                            age: age || null,
+                            grade: grade || null,
+                        }),
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            sessionId = data.session_id;
+                            hideTypingIndicator();
+                            addMessage("assistant", data.message);
+                        })
+                        .catch((error) => {
+                            hideTypingIndicator();
+                            console.error("Error:", error);
+                            showAlert(
+                                "Failed to start diagnostic session",
+                                "danger"
+                            );
+                        });
+                });
+
+            // Restart diagnostic
+            document
+                .getElementById("restart-diagnostic")
+                .addEventListener("click", function () {
+                    if (
+                        confirm(
+                            "Are you sure you want to restart the diagnostic? All progress will be lost."
+                        )
+                    ) {
+                        document.getElementById("chat-section").style.display =
+                            "none";
+                        document.getElementById("setup-form").style.display =
+                            "block";
+                        document.getElementById("chat-container").innerHTML =
+                            "";
+                        updateProgressSteps("setup");
+                    }
+                });
+
+            // Send message functionality
+            document
+                .getElementById("send-message")
+                .addEventListener("click", sendMessage);
+            document
+                .getElementById("user-input")
+                .addEventListener("keypress", function (e) {
+                    if (e.key === "Enter") {
+                        sendMessage();
+                    }
+                });
+
+            function sendMessage() {
+                if (!sessionId) return;
+
+                const userInput = document
+                    .getElementById("user-input")
+                    .value.trim();
+                if (!userInput) return;
+
+                addMessage("user", userInput);
+                document.getElementById("user-input").value = "";
+
+                showTypingIndicator();
+
+                fetch("/api/continue-diagnostic", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: userInput,
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        hideTypingIndicator();
+                        addMessage("assistant", data.message);
+
+                        if (data.is_complete && data.diagnostic_result) {
+                            diagnosticResults = data.diagnostic_result;
+                            displayResults(diagnosticResults);
+                            updateProgressSteps("results");
+                        }
+                    })
+                    .catch((error) => {
+                        hideTypingIndicator();
+                        console.error("Error:", error);
+                        showAlert("Failed to send message", "danger");
+                    });
+            }
+
+            // Complete diagnostic button
+            document
+                .getElementById("complete-diagnostic")
+                .addEventListener("click", function () {
+                    if (!sessionId) return;
+
+                    showTypingIndicator();
+
+                    fetch("/api/complete-diagnostic", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            session_id: sessionId,
+                        }),
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            hideTypingIndicator();
+
+                            if (data.error) {
+                                showAlert("Error: " + data.error, "danger");
+                                return;
+                            }
+
+                            diagnosticResults = data.diagnostic_result;
+                            displayResults(diagnosticResults);
+                            updateProgressSteps("results");
+                        })
+                        .catch((error) => {
+                            hideTypingIndicator();
+                            console.error("Error:", error);
+                            showAlert(
+                                "Failed to complete diagnostic",
+                                "danger"
+                            );
+                        });
+                });
+
+            // Typing indicator functions
+            function showTypingIndicator() {
+                const indicator = document.getElementById("typing-indicator");
+                indicator.style.display = "flex";
+                const chatContainer = document.getElementById("chat-container");
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function hideTypingIndicator() {
+                document.getElementById("typing-indicator").style.display =
+                    "none";
+            }
+
+            // Add message to chat
+            function addMessage(role, content) {
+                const chatContainer = document.getElementById("chat-container");
+                const messageDiv = document.createElement("div");
+                messageDiv.className = `message ${role}-message`;
+                messageDiv.innerHTML = marked.parse(content);
+
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // Display results
+            // Display results
+            function displayResults(results) {
+                document.getElementById("chat-section").style.display = "none";
+                document.getElementById("result-container").style.display =
+                    "block";
+
+                // Populate strengths
+                const strengthsList = document.getElementById("strengths-list");
+                strengthsList.innerHTML = "";
+                results.diagnostic_summary.strengths.forEach((strength) => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item";
+                    li.innerHTML = strength;
+                    strengthsList.appendChild(li);
+                });
+
+                // Populate gaps
+                const gapsList = document.getElementById("gaps-list");
+                gapsList.innerHTML = "";
+                results.diagnostic_summary.gaps.forEach((gap) => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item";
+                    li.innerHTML = gap;
+                    gapsList.appendChild(li);
+                });
+
+                // Create Knowledge Graph
+                if (results.knowledge_graph) {
+                    createKnowledgeGraph(results.knowledge_graph);
+                    createKnowledgeList(results.knowledge_graph);
+                }
+
+                // Populate roadmap
+                const roadmapContainer =
+                    document.getElementById("roadmap-container");
+                roadmapContainer.innerHTML = "";
+                results.learning_roadmap.forEach((item, index) => {
+                    const itemDiv = document.createElement("div");
+                    itemDiv.className = "roadmap-item";
+
+                    const title = document.createElement("h5");
+                    title.innerHTML = `${index + 1}. ${item.concept}`;
+
+                    const desc = document.createElement("p");
+                    desc.innerHTML = item.description;
+
+                    const prereqTitle = document.createElement("strong");
+                    prereqTitle.innerText = "Prerequisites: ";
+
+                    const prereqSpan = document.createElement("span");
+                    prereqSpan.innerText =
+                        item.prerequisites.join(", ") || "None";
+
+                    const resourcesTitle = document.createElement("strong");
+                    resourcesTitle.innerText = "Suggested Resources: ";
+
+                    const resourcesSpan = document.createElement("span");
+                    resourcesSpan.innerText = item.resources.join(", ");
+
+                    itemDiv.appendChild(title);
+                    itemDiv.appendChild(desc);
+
+                    const prereqP = document.createElement("p");
+                    prereqP.appendChild(prereqTitle);
+                    prereqP.appendChild(prereqSpan);
+                    itemDiv.appendChild(prereqP);
+
+                    const resourcesP = document.createElement("p");
+                    resourcesP.appendChild(resourcesTitle);
+                    resourcesP.appendChild(resourcesSpan);
+                    itemDiv.appendChild(resourcesP);
+
+                    roadmapContainer.appendChild(itemDiv);
+                });
+
+                // Create Roadmap Diagram
+                createRoadmapDiagram(results.learning_roadmap);
+
+                // Populate recommendations
+                const recommendationsList = document.getElementById(
+                    "recommendations-list"
+                );
+                recommendationsList.innerHTML = "";
+                results.recommendations.forEach((recommendation) => {
+                    const li = document.createElement("li");
+                    li.className = "list-group-item";
+                    li.innerHTML = marked.parse(recommendation);
+                    recommendationsList.appendChild(li);
+                });
+
+                // Populate interests
+                document.getElementById("interests-display").innerText =
+                    results.user_interests.join(", ");
+            }
+
+            // Create Knowledge Graph
+            // Replace the createKnowledgeGraph function
+            function createKnowledgeGraph(knowledgeData) {
+                // Clear previous graph
+                d3.select("#knowledge-graph").html("");
+
+                if (
+                    !knowledgeData ||
+                    !knowledgeData.nodes ||
+                    knowledgeData.nodes.length === 0
+                ) {
+                    const placeholder = d3
+                        .select("#knowledge-graph")
+                        .append("div")
+                        .attr("class", "text-center py-5")
+                        .text("No knowledge data available.");
+                    return;
+                }
+
+                // Create tooltip div
+                const tooltip = d3
+                    .select("#knowledge-graph")
+                    .append("div")
+                    .attr("class", "node-tooltip")
+                    .style("position", "absolute")
+                    .style("pointer-events", "none"); // Fix: Make tooltip ignore mouse events
+
+                // Set up the SVG container
+                const width =
+                    document.getElementById("knowledge-graph").offsetWidth;
+                const height = 400;
+
+                const svg = d3
+                    .select("#knowledge-graph")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                // Create a group for the graph
+                const g = svg.append("g");
+
+                // Create a zoom behavior
+                const zoom = d3
+                    .zoom()
+                    .scaleExtent([0.5, 3])
+                    .on("zoom", (event) => {
+                        g.attr("transform", event.transform);
+                        g.selectAll("circle").attr(
+                            "stroke-width",
+                            2 / event.transform.k
+                        );
+                    });
+
+                svg.call(zoom);
+
+                // Create a force simulation with improved spacing
+                const simulation = d3
+                    .forceSimulation(knowledgeData.nodes)
+                    .force(
+                        "link",
+                        d3
+                            .forceLink(knowledgeData.links)
+                            .id((d) => d.id)
+                            .distance(150) // Increased from 120 for more spacing
+                    )
+                    .force("charge", d3.forceManyBody().strength(-400)) // Stronger repulsion force
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("x", d3.forceX(width / 2).strength(0.08))
+                    .force("y", d3.forceY(height / 2).strength(0.08))
+                    .force("collision", d3.forceCollide().radius(40)); // Add collision detection
+
+                // Define arrow marker
+                svg.append("defs")
+                    .append("marker")
+                    .attr("id", "knowledge-arrow")
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 28) // Increased from 25 for better arrow positioning
+                    .attr("refY", 0)
+                    .attr("markerWidth", 6)
+                    .attr("markerHeight", 6)
+                    .attr("orient", "auto")
+                    .append("path")
+                    .attr("d", "M0,-5L10,0L0,5")
+                    .attr("fill", "#999");
+
+                // Create links
+                const link = g
+                    .append("g")
+                    .attr("class", "links")
+                    .selectAll("line")
+                    .data(knowledgeData.links)
+                    .enter()
+                    .append("line")
+                    .attr("class", "link")
+                    .attr("stroke-width", 1.5) // Added for better visibility
+                    .attr("stroke", "#aaa") // Added for consistency
+                    .attr("marker-end", "url(#knowledge-arrow)")
+                    .attr("stroke-dasharray", (d) =>
+                        d.relationship === "relates_to" ? "5,5" : "none"
+                    );
+
+                // Create nodes
+                const node = g
+                    .append("g")
+                    .attr("class", "nodes")
+                    .selectAll(".node")
+                    .data(knowledgeData.nodes)
+                    .enter()
+                    .append("g")
+                    .attr("class", "node knowledge-node")
+                    .call(
+                        d3
+                            .drag()
+                            .on("start", dragstarted)
+                            .on("drag", dragged)
+                            .on("end", dragended)
+                    );
+
+                // Add circles to nodes with increased size
+                node.append("circle")
+                    .attr("r", 15) // Increased from 12
+                    .attr("class", (d) => `node-proficiency-${d.proficiency}`)
+                    .on("mouseover", function (event, d) {
+                        tooltip
+                            .transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+                        tooltip
+                            .html(
+                                `
+                          <strong>${d.name}</strong><br>
+                          ${d.description}<br>
+                          <em>Proficiency: ${d.proficiency}</em>
+                        `
+                            )
+                            // Use event offset for dynamic tooltip placement
+                            .style("left", event.offsetX + 10 + "px")
+                            .style("top", event.offsetY - 28 + "px");
+                    })
+                    .on("mouseout", function () {
+                        tooltip.transition().duration(300).style("opacity", 0);
+                    });
+
+                // Add labels to nodes with better offset
+                node.append("text")
+                    .attr("dx", 18) // Increased from 15
+                    .attr("dy", ".35em")
+                    .attr("font-size", "12px") // Added explicit font size
+                    .text((d) => d.name);
+
+                // Add subtle drop shadow to nodes for depth
+                node.select("circle").style(
+                    "filter",
+                    "drop-shadow(0px 1px 2px rgba(0,0,0,0.2))"
+                );
+
+                node.on("mouseover", function (event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr(
+                            "transform",
+                            `translate(${d.x},${d.y}) scale(1.1)`
+                        );
+                }).on("mouseout", function (event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr("transform", `translate(${d.x},${d.y}) scale(1)`);
+                });
+
+                // Update positions on each tick of the simulation
+                simulation.on("tick", () => {
+                    // Keep nodes within bounds
+                    knowledgeData.nodes.forEach((d) => {
+                        d.x = Math.max(20, Math.min(width - 20, d.x));
+                        d.y = Math.max(20, Math.min(height - 20, d.y));
+                    });
+
+                    link.attr("x1", (d) => d.source.x)
+                        .attr("y1", (d) => d.source.y)
+                        .attr("x2", (d) => d.target.x)
+                        .attr("y2", (d) => d.target.y);
+
+                    node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+                });
+
+                // Helper functions for dragging
+                function dragstarted(event, d) {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                }
+
+                function dragged(event, d) {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                }
+
+                function dragended(event, d) {
+                    if (!event.active) simulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                }
+
+                // Center the graph initially
+                svg.call(zoom.transform, d3.zoomIdentity);
+
+                // Run simulation longer for better initial layout
+                simulation.alpha(1).restart();
+            }
+
+            // Create Knowledge List View
+            function createKnowledgeList(knowledgeData) {
+                const knowledgeList = document.getElementById("knowledge-list");
+                knowledgeList.innerHTML = "";
+
+                if (
+                    !knowledgeData ||
+                    !knowledgeData.nodes ||
+                    knowledgeData.nodes.length === 0
+                ) {
+                    knowledgeList.innerHTML =
+                        "<p class='text-center py-3'>No knowledge data available.</p>";
+                    return;
+                }
+
+                // Group by proficiency
+                const proficiencyGroups = {
+                    high: { title: "Strong Knowledge", items: [] },
+                    medium: { title: "Familiar", items: [] },
+                    low: { title: "Basic Understanding", items: [] },
+                };
+
+                knowledgeData.nodes.forEach((node) => {
+                    if (proficiencyGroups[node.proficiency]) {
+                        proficiencyGroups[node.proficiency].items.push(node);
+                    }
+                });
+
+                // Create sections for each proficiency level
+                for (const [level, group] of Object.entries(
+                    proficiencyGroups
+                )) {
+                    if (group.items.length > 0) {
+                        const section = document.createElement("div");
+                        section.className = "mb-3";
+
+                        const heading = document.createElement("h5");
+                        heading.textContent = group.title;
+                        section.appendChild(heading);
+
+                        const list = document.createElement("ul");
+                        list.className = "list-group";
+
+                        group.items.forEach((item) => {
+                            const listItem = document.createElement("li");
+                            listItem.className = "list-group-item";
+
+                            const title = document.createElement("strong");
+                            title.textContent = item.name;
+
+                            const description = document.createElement("p");
+                            description.className = "mb-0 mt-1";
+                            description.style.fontSize = "0.875rem";
+                            description.textContent = item.description;
+
+                            listItem.appendChild(title);
+                            listItem.appendChild(description);
+                            list.appendChild(listItem);
+                        });
+
+                        section.appendChild(list);
+                        knowledgeList.appendChild(section);
+                    }
+                }
+            }
+
+            // Create Roadmap Diagram View
+            function createRoadmapDiagram(roadmapData) {
+                const container = document.getElementById("roadmap-diagram");
+                container.innerHTML = "";
+
+                if (!roadmapData || roadmapData.length === 0) {
+                    container.innerHTML =
+                        "<p class='text-center py-5'>No roadmap data available.</p>";
+                    return;
+                }
+
+                // Group by stage
+                const stageGroups = {
+                    beginner: { title: "Beginner", items: [] },
+                    intermediate: { title: "Intermediate", items: [] },
+                    advanced: { title: "Advanced", items: [] },
+                };
+
+                // Fall back to evenly distributed stages if no stage property
+                if (!roadmapData[0].hasOwnProperty("stage")) {
+                    const chunkSize = Math.ceil(roadmapData.length / 3);
+                    roadmapData.forEach((item, index) => {
+                        if (index < chunkSize) {
+                            item.stage = "beginner";
+                        } else if (index < chunkSize * 2) {
+                            item.stage = "intermediate";
+                        } else {
+                            item.stage = "advanced";
+                        }
+                    });
+                }
+
+                // Add items to stage groups
+                roadmapData.forEach((item) => {
+                    // Assign unique ID if not present
+                    if (!item.id) {
+                        item.id = `item-${Math.random()
+                            .toString(36)
+                            .substr(2, 9)}`;
+                    }
+
+                    if (stageGroups[item.stage]) {
+                        stageGroups[item.stage].items.push(item);
+                    } else {
+                        // Default to beginner if stage is not recognized
+                        stageGroups.beginner.items.push(item);
+                    }
+                });
+
+                // Arrows container
+                const arrowsContainer = document.createElement("div");
+                arrowsContainer.className = "roadmap-arrows";
+                const arrowsSvg = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "svg"
+                );
+                arrowsContainer.appendChild(arrowsSvg);
+
+                // Define arrow marker
+                const defs = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "defs"
+                );
+                const marker = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "marker"
+                );
+                marker.setAttribute("id", "arrowhead");
+                marker.setAttribute("viewBox", "0 -5 10 10");
+                marker.setAttribute("refX", "5");
+                marker.setAttribute("refY", "0");
+                marker.setAttribute("markerWidth", "6");
+                marker.setAttribute("markerHeight", "6");
+                marker.setAttribute("orient", "auto");
+
+                const path = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "path"
+                );
+                path.setAttribute("d", "M0,-5L10,0L0,5");
+                path.setAttribute("fill", "#adb5bd");
+
+                marker.appendChild(path);
+                defs.appendChild(marker);
+                arrowsSvg.appendChild(defs);
+
+                // Create stage sections
+                for (const [stage, group] of Object.entries(stageGroups)) {
+                    if (group.items.length > 0) {
+                        const stageSection = document.createElement("div");
+                        stageSection.className = "roadmap-stage";
+                        stageSection.dataset.stage = stage;
+
+                        const stageTitle = document.createElement("h5");
+                        stageTitle.className = "roadmap-stage-title";
+                        stageTitle.textContent = group.title;
+                        stageSection.appendChild(stageTitle);
+
+                        const stageItems = document.createElement("div");
+                        stageItems.className = "roadmap-stage-items";
+
+                        group.items.forEach((item) => {
+                            const itemNode = document.createElement("div");
+                            itemNode.className = "roadmap-node";
+                            itemNode.id = item.id;
+
+                            const title = document.createElement("h5");
+                            title.textContent = item.concept;
+
+                            const description = document.createElement("div");
+                            description.className = "roadmap-node-description";
+                            description.textContent = item.description;
+
+                            itemNode.appendChild(title);
+                            itemNode.appendChild(description);
+
+                            if (
+                                item.prerequisites &&
+                                item.prerequisites.length > 0
+                            ) {
+                                const prereq = document.createElement("div");
+                                prereq.className = "roadmap-node-prereq";
+                                prereq.innerHTML = `<strong>Prerequisites:</strong> ${item.prerequisites.join(
+                                    ", "
+                                )}`;
+                                itemNode.appendChild(prereq);
+                            }
+
+                            stageItems.appendChild(itemNode);
+                        });
+
+                        stageSection.appendChild(stageItems);
+                        container.appendChild(stageSection);
+                    }
+                }
+
+                container.appendChild(arrowsContainer);
+
+                // Draw connections after elements are rendered
+                setTimeout(() => {
+                    drawRoadmapConnections(roadmapData, arrowsSvg);
+                }, 100);
+            }
+
+            // Draw connections between roadmap items
+            // Replace the drawRoadmapConnections function
+            function drawRoadmapConnections(roadmapData, svg) {
+                // Clear previous connections
+                while (svg.lastChild) {
+                    if (svg.lastChild.tagName !== "defs") {
+                        svg.removeChild(svg.lastChild);
+                    } else {
+                        break;
+                    }
+                }
+
+                // Create map of concept names to IDs
+                const conceptToId = {};
+                roadmapData.forEach((item) => {
+                    conceptToId[item.concept] = item.id;
+                });
+
+                // Set svg dimensions first
+                svg.setAttribute(
+                    "width",
+                    svg.parentElement.parentElement.scrollWidth
+                );
+                svg.setAttribute(
+                    "height",
+                    svg.parentElement.parentElement.scrollHeight
+                );
+
+                // Draw connections
+                roadmapData.forEach((item) => {
+                    if (item.prerequisites && item.prerequisites.length > 0) {
+                        const target = document.getElementById(item.id);
+                        if (!target) return;
+
+                        const targetRect = target.getBoundingClientRect();
+                        const containerRect = document
+                            .getElementById("roadmap-diagram")
+                            .getBoundingClientRect();
+
+                        item.prerequisites.forEach((prereq) => {
+                            const sourceId = conceptToId[prereq];
+                            if (!sourceId) return;
+
+                            const source = document.getElementById(sourceId);
+                            if (!source) return;
+
+                            const sourceRect = source.getBoundingClientRect();
+
+                            // Calculate positions relative to the container
+                            const startX =
+                                sourceRect.left +
+                                sourceRect.width / 2 -
+                                containerRect.left;
+                            const startY =
+                                sourceRect.bottom - containerRect.top - 5; // Adjust starting point
+                            const endX =
+                                targetRect.left +
+                                targetRect.width / 2 -
+                                containerRect.left;
+                            const endY = targetRect.top - containerRect.top + 5; // Adjust ending point
+
+                            // Create path
+                            const path = document.createElementNS(
+                                "http://www.w3.org/2000/svg",
+                                "path"
+                            );
+
+                            // Better control points for smoother curves
+                            const midY = (startY + endY) / 2;
+                            const distance = Math.abs(endY - startY);
+                            const curve = Math.min(distance * 0.5, 50); // Limit curve steepness
+
+                            // Create a smoother curve path
+                            //const d = `
+                            //M ${startX} ${startY}
+                            //C ${startX} ${startY + curve},
+                            //${endX} ${endY - curve},
+                            //${endX} ${endY}
+                            //`;
+                            // In drawRoadmapConnections, replace the path calculation with:
+                            const midX = (startX + endX) / 2;
+                            const d = `M ${startX} ${startY}
+           C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                            path.setAttribute("d", d);
+
+                            // path.setAttribute("d", d);
+                            path.setAttribute("class", "roadmap-arrow");
+                            path.setAttribute("marker-end", "url(#arrowhead)");
+
+                            svg.appendChild(path);
+                        });
+                    }
+                });
+            }
+
+            // Create Skills Tree visualization
+            // Replace the createSkillsTree and createConnection functions with this:
+            // Toggle between knowledge views
+            document
+                .getElementById("knowledge-graph-btn")
+                .addEventListener("click", function () {
+                    this.classList.add("active");
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-primary");
+
+                    document
+                        .getElementById("knowledge-list-btn")
+                        .classList.remove("active");
+                    document
+                        .getElementById("knowledge-list-btn")
+                        .classList.remove("btn-primary");
+                    document
+                        .getElementById("knowledge-list-btn")
+                        .classList.add("btn-outline-primary");
+
+                    document.getElementById("knowledge-graph").style.display =
+                        "block";
+                    document.getElementById("knowledge-list").style.display =
+                        "none";
+                });
+
+            document
+                .getElementById("knowledge-list-btn")
+                .addEventListener("click", function () {
+                    this.classList.add("active");
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-primary");
+
+                    document
+                        .getElementById("knowledge-graph-btn")
+                        .classList.remove("active");
+                    document
+                        .getElementById("knowledge-graph-btn")
+                        .classList.remove("btn-primary");
+                    document
+                        .getElementById("knowledge-graph-btn")
+                        .classList.add("btn-outline-primary");
+
+                    document.getElementById("knowledge-graph").style.display =
+                        "none";
+                    document.getElementById("knowledge-list").style.display =
+                        "block";
+                });
+
+            // Toggle between list view and tree view
+            // Replace the existing toggle event handlers with this:
+            document
+                .getElementById("list-view-btn")
+                .addEventListener("click", function () {
+                    this.classList.add("active");
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-primary");
+
+                    document
+                        .getElementById("diagram-view-btn")
+                        .classList.remove("active");
+                    document
+                        .getElementById("diagram-view-btn")
+                        .classList.remove("btn-primary");
+                    document
+                        .getElementById("diagram-view-btn")
+                        .classList.add("btn-outline-primary");
+
+                    document.getElementById("roadmap-container").style.display =
+                        "block";
+                    document.getElementById("roadmap-diagram").style.display =
+                        "none";
+                });
+
+            document
+                .getElementById("diagram-view-btn")
+                .addEventListener("click", function () {
+                    this.classList.add("active");
+                    this.classList.remove("btn-outline-primary");
+                    this.classList.add("btn-primary");
+
+                    document
+                        .getElementById("list-view-btn")
+                        .classList.remove("active");
+                    document
+                        .getElementById("list-view-btn")
+                        .classList.remove("btn-primary");
+                    document
+                        .getElementById("list-view-btn")
+                        .classList.add("btn-outline-primary");
+
+                    document.getElementById("roadmap-container").style.display =
+                        "none";
+                    document.getElementById("roadmap-diagram").style.display =
+                        "block";
+
+                    // Force re-render of diagram when switching to diagram view
+                    if (diagnosticResults) {
+                        createRoadmapDiagram(
+                            diagnosticResults.learning_roadmap
+                        );
+                    }
+                });
+
+            // Alert message functionality
+            function showAlert(message, type = "primary") {
+                const alertDiv = document.createElement("div");
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+                // Insert at the top of the current active section
+                if (
+                    document.getElementById("chat-section").style.display !==
+                    "none"
+                ) {
+                    document
+                        .getElementById("chat-section")
+                        .querySelector(".card-body")
+                        .prepend(alertDiv);
+                } else if (
+                    document.getElementById("result-container").style
+                        .display !== "none"
+                ) {
+                    document
+                        .getElementById("result-container")
+                        .querySelector(".card-body")
+                        .prepend(alertDiv);
+                } else {
+                    document
+                        .getElementById("setup-form")
+                        .querySelector(".card-body")
+                        .prepend(alertDiv);
+                }
+
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    alertDiv.classList.remove("show");
+                    setTimeout(() => alertDiv.remove(), 500);
+                }, 5000);
+            }
+
+            // Download roadmap function
+            document
+                .getElementById("download-roadmap")
+                .addEventListener("click", function () {
+                    if (!diagnosticResults) return;
+
+                    // Prepare data
+                    const filename = "learning_roadmap.json";
+                    const dataStr =
+                        "data:text/json;charset=utf-8," +
+                        encodeURIComponent(
+                            JSON.stringify(diagnosticResults, null, 2)
+                        );
+
+                    // Create download link
+                    const downloadAnchorNode = document.createElement("a");
+                    downloadAnchorNode.setAttribute("href", dataStr);
+                    downloadAnchorNode.setAttribute("download", filename);
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+
+                    showAlert("Roadmap downloaded successfully!", "success");
+                });
+
+            // Print roadmap
+            document
+                .getElementById("print-roadmap")
+                .addEventListener("click", function () {
+                    window.print();
+                });
+
+            // New assessment button
+            document
+                .getElementById("new-assessment")
+                .addEventListener("click", function () {
+                    // Reset all sections
+                    document.getElementById("result-container").style.display =
+                        "none";
+                    document.getElementById("chat-container").innerHTML = "";
+                    document.getElementById("setup-form").style.display =
+                        "block";
+
+                    // Reset form fields
+                    document.getElementById("subject").value = "";
+                    document.getElementById("goal").value = "";
+                    document.getElementById("age").value = "";
+                    document.getElementById("grade").value = "";
+
+                    // Reset progress steps
+                    updateProgressSteps("setup");
+
+                    // Reset session data
+                    sessionId = null;
+                    diagnosticResults = null;
+                });
+
+            // Share results functionality
+            document
+                .getElementById("share-results")
+                .addEventListener("click", function () {
+                    if (!diagnosticResults) return;
+
+                    // Create a shareable link (in a real app, this would create a permalink)
+                    const dummyShareUrl = `${window.location.origin}/share/${sessionId}`;
+
+                    // Use Web Share API if available
+                    if (navigator.share) {
+                        navigator
+                            .share({
+                                title: "My Learning Roadmap",
+                                text: "Check out my personalized learning roadmap from Learning Navigator!",
+                                url: dummyShareUrl,
+                            })
+                            .then(() =>
+                                showAlert("Shared successfully!", "success")
+                            )
+                            .catch((error) =>
+                                console.log("Error sharing", error)
+                            );
+                    } else {
+                        // Fallback - copy to clipboard
+                        navigator.clipboard.writeText(dummyShareUrl).then(
+                            function () {
+                                showAlert(
+                                    "Share link copied to clipboard!",
+                                    "success"
+                                );
+                            },
+                            function () {
+                                showAlert(
+                                    "Failed to copy share link.",
+                                    "danger"
+                                );
+                            }
+                        );
+                    }
+                });
+
+            // Mock PDF download (in a real app, this would generate a PDF)
+            document
+                .getElementById("download-pdf")
+                .addEventListener("click", function () {
+                    showAlert("Preparing PDF download...", "info");
+                    setTimeout(() => {
+                        showAlert("PDF downloaded successfully!", "success");
+                    }, 2000);
+                });
+            // Add this near the end of your script section
+            let resizeTimer;
+            window.addEventListener("resize", function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (
+                        document.getElementById("knowledge-graph").style
+                            .display === "block" &&
+                        diagnosticResults &&
+                        diagnosticResults.knowledge_graph
+                    ) {
+                        createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                    }
+                    if (
+                        document.getElementById("roadmap-diagram").style
+                            .display === "block" &&
+                        diagnosticResults
+                    ) {
+                        createRoadmapDiagram(
+                            diagnosticResults.learning_roadmap
+                        );
+                    }
+                }, 200);
+            });
+        </script>
+    </body>
+</html>
