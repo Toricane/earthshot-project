@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Learning Navigator Results - {{ subject }}</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <!-- Include the same CSS styles as index.html -->
+        <style>
+            :root {
+                --primary-color: #4361ee;
+                --primary-hover: #3a56d4;
+                --secondary-color: #3f37c9;
+                --accent-color: #4cc9f0;
+                --light-bg: #f8f9fa;
+                --dark-bg: #212529;
+                --light-text: #f8f9fa;
+                --dark-text: #212529;
+                --user-msg-bg: #e9ecef;
+                --assistant-msg-bg: #d8eefe;
+                --transition-speed: 0.3s;
+                --border-radius: 0.5rem;
+            }
+
+            [data-bs-theme="dark"] {
+                --light-bg: #212529;
+                --dark-bg: #f8f9fa;
+                --light-text: #212529;
+                --dark-text: #f8f9fa;
+                --user-msg-bg: #3a3f44;
+                --assistant-msg-bg: #2b3a55;
+            }
+
+            body {
+                padding-top: 2rem;
+                background-color: var(--light-bg);
+                transition: background-color var(--transition-speed);
+                min-height: 100vh;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .app-container {
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+
+            .app-header {
+                margin-bottom: 2rem;
+                text-align: center;
+            }
+
+            .app-title {
+                font-weight: 700;
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
+
+            .app-subtitle {
+                font-weight: 400;
+                opacity: 0.8;
+                margin-bottom: 2rem;
+            }
+
+            .card {
+                border-radius: var(--border-radius);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                border: none;
+                transition: all var(--transition-speed);
+                margin-bottom: 2rem;
+            }
+
+            .card-header {
+                border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+                background-color: var(--primary-color);
+                color: white;
+                font-weight: 600;
+                padding: 1rem 1.5rem;
+            }
+
+            .card-body {
+                padding: 1.5rem;
+            }
+
+            .btn-primary {
+                background-color: var(--primary-color);
+                border-color: var(--primary-color);
+            }
+
+            .btn-primary:hover {
+                background-color: var(--primary-hover);
+                border-color: var(--primary-hover);
+            }
+
+            .btn-success {
+                background-color: var(--secondary-color);
+                border-color: var(--secondary-color);
+            }
+
+            .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            }
+
+            /* Roadmap Styles */
+            .roadmap-container {
+                position: relative;
+            }
+
+            .roadmap-item {
+                border-left: 3px solid var(--primary-color);
+                padding: 1rem 1.5rem;
+                margin-bottom: 1.5rem;
+                position: relative;
+                transition: all var(--transition-speed);
+            }
+            [data-bs-theme="dark"] .roadmap-item {
+                border-left-color: var(--primary-hover);
+            }
+
+            .roadmap-item:hover {
+                background-color: rgba(67, 97, 238, 0.05);
+                transform: translateX(5px);
+            }
+            [data-bs-theme="dark"] .roadmap-item:hover {
+                background-color: rgba(67, 97, 238, 0.15);
+            }
+
+            .roadmap-item::before {
+                content: "";
+                position: absolute;
+                left: -10px;
+                top: 15px; /* Adjusted for better alignment */
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+            }
+            [data-bs-theme="dark"] .roadmap-item::before {
+                background-color: var(--primary-hover);
+            }
+
+            .roadmap-item h5 {
+                color: var(--primary-color);
+                margin-bottom: 0.5rem;
+            }
+            [data-bs-theme="dark"] .roadmap-item h5 {
+                color: var(--accent-color);
+            }
+
+            /* Results page */
+            .result-section {
+                margin-bottom: 2rem;
+            }
+
+            .result-section h4 {
+                margin-bottom: 1rem;
+                border-bottom: 2px solid var(--primary-color);
+                padding-bottom: 0.5rem;
+                display: inline-block;
+            }
+            [data-bs-theme="dark"] .result-section h4 {
+                border-bottom-color: var(--primary-hover);
+            }
+
+            .list-group-item {
+                border-left: 3px solid var(--primary-color);
+                margin-bottom: 0.5rem;
+                border-radius: var(--border-radius);
+                background-color: var(
+                    --bs-list-group-bg
+                ); /* Use Bootstrap variable */
+            }
+            [data-bs-theme="dark"] .list-group-item {
+                border-left-color: var(--primary-hover);
+                background-color: #3a3f44; /* Darker list item */
+                color: var(--dark-text);
+            }
+
+            /* Toggle Switch */
+            .theme-switch-wrapper {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                display: flex;
+                align-items: center;
+                z-index: 1050; /* Ensure it's above other elements */
+            }
+
+            .theme-switch {
+                display: inline-block;
+                height: 26px;
+                position: relative;
+                width: 50px;
+            }
+
+            .theme-switch input {
+                display: none;
+            }
+
+            .slider {
+                background-color: #ccc;
+                bottom: 0;
+                cursor: pointer;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
+                transition: 0.4s;
+                border-radius: 34px;
+            }
+
+            .slider:before {
+                background-color: white;
+                bottom: 4px;
+                content: "";
+                height: 18px;
+                left: 4px;
+                position: absolute;
+                transition: 0.4s;
+                width: 18px;
+                border-radius: 50%;
+            }
+
+            input:checked + .slider {
+                background-color: var(--primary-color);
+            }
+            input:checked + .slider:before {
+                transform: translateX(24px);
+            }
+
+            .action-buttons {
+                display: flex;
+                flex-wrap: wrap; /* Allow wrapping on smaller screens */
+                gap: 0.5rem;
+                margin-top: 1.5rem;
+            }
+
+            /* Skills Tree View */
+            .tree-view-toggle {
+                margin-bottom: 1rem;
+            }
+
+            .skills-tree {
+                display: none;
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                height: 500px;
+                position: relative;
+                overflow: hidden;
+            }
+            [data-bs-theme="dark"] .skills-tree {
+                background-color: #2b2b2b;
+            }
+
+            .node circle {
+                stroke: #fff;
+                stroke-width: 2px;
+                filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.2));
+            }
+            [data-bs-theme="dark"] .node circle {
+                stroke: #555;
+            }
+
+            .node text {
+                font-size: 12px;
+                font-family: sans-serif;
+                fill: var(--dark-text);
+            }
+            [data-bs-theme="dark"] .node text {
+                fill: var(--light-text);
+            }
+
+            .link {
+                fill: none;
+                stroke: #ccc;
+                stroke-width: 1.5px;
+                transition: stroke 0.2s;
+            }
+            [data-bs-theme="dark"] .link {
+                stroke: #555;
+            }
+
+            .node-tooltip {
+                position: absolute;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+                max-width: 250px;
+                z-index: 100;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+
+            /* Knowledge Graph Styles */
+            .knowledge-graph {
+                height: 400px;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 2rem;
+                border: 1px solid #dee2e6;
+            }
+            [data-bs-theme="dark"] .knowledge-graph {
+                background-color: #2b2b2b;
+                border-color: #444;
+            }
+
+            .knowledge-node {
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .knowledge-node:hover {
+                /* Handled by JS now */
+            }
+            .knowledge-list {
+                margin-bottom: 2rem;
+            }
+
+            .node-proficiency-high {
+                fill: #198754;
+            }
+            .node-proficiency-medium {
+                fill: #ffc107;
+            }
+            .node-proficiency-low {
+                fill: #6c757d;
+            }
+
+            /* Roadmap Diagram Styles */
+            .roadmap-diagram {
+                display: none;
+                min-height: 400px;
+                height: auto;
+                background-color: #f8f9fa;
+                border-radius: var(--border-radius);
+                position: relative;
+                overflow: auto;
+                padding: 2rem;
+                border: 1px solid #dee2e6;
+            }
+            [data-bs-theme="dark"] .roadmap-diagram {
+                background-color: #2b2b2b;
+                border-color: #444;
+            }
+
+            .roadmap-stage {
+                margin-bottom: 3rem;
+                position: relative;
+            }
+            .roadmap-stage-title {
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                color: var(--primary-color);
+                border-bottom: 2px solid var(--primary-color);
+                display: inline-block;
+                padding-bottom: 0.25rem;
+            }
+            [data-bs-theme="dark"] .roadmap-stage-title {
+                color: var(--accent-color);
+                border-bottom-color: var(--accent-color);
+            }
+            .roadmap-stage-items {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2rem;
+                margin-bottom: 1.5rem;
+                position: relative;
+                z-index: 2;
+            }
+            .roadmap-node {
+                width: 220px;
+                padding: 1rem;
+                border-radius: var(--border-radius);
+                background-color: white;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                position: relative;
+                transition: all 0.3s;
+                z-index: 2;
+                border: 1px solid #eee;
+            }
+            [data-bs-theme="dark"] .roadmap-node {
+                background-color: #424242;
+                color: #e0e0e0;
+                border-color: #555;
+            }
+            .roadmap-node:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            }
+            .roadmap-node h5 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+                color: var(--primary-color);
+            }
+            [data-bs-theme="dark"] .roadmap-node h5 {
+                color: var(--accent-color);
+            }
+            .roadmap-node-description {
+                font-size: 0.875rem;
+                margin-bottom: 0.5rem;
+                color: #555;
+            }
+            [data-bs-theme="dark"] .roadmap-node-description {
+                color: #ccc;
+            }
+            .roadmap-node-prereq {
+                font-size: 0.75rem;
+                color: #6c757d;
+                margin-top: 0.75rem;
+                border-top: 1px dashed #eee;
+                padding-top: 0.5rem;
+            }
+            [data-bs-theme="dark"] .roadmap-node-prereq {
+                color: #aaa;
+                border-top-color: #555;
+            }
+            .roadmap-arrows {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1;
+                overflow: visible;
+            }
+            .roadmap-arrow {
+                fill: none;
+                stroke: #adb5bd;
+                stroke-width: 1.5px;
+                stroke-opacity: 0.7;
+                marker-end: url(#arrowhead);
+                transition: stroke-opacity 0.2s;
+            }
+            [data-bs-theme="dark"] .roadmap-arrow {
+                stroke: #666;
+            }
+            .roadmap-arrow:hover {
+                stroke-opacity: 1;
+            }
+
+            /* Alert styling */
+            .alert-container {
+                position: fixed;
+                top: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1055;
+                width: auto;
+                max-width: 90%;
+            }
+            .alert {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Mobile improvements */
+            @media (max-width: 768px) {
+                .action-buttons {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                .action-buttons .btn {
+                    width: 100%;
+                }
+                .roadmap-item {
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                }
+                .roadmap-stage-items {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .roadmap-node {
+                    width: 90%;
+                }
+                .theme-switch-wrapper {
+                    top: 0.5rem;
+                    right: 0.5rem;
+                }
+                body {
+                    padding-top: 1rem;
+                }
+                .app-title {
+                    font-size: 1.75rem;
+                }
+                .app-subtitle {
+                    font-size: 0.9rem;
+                    margin-bottom: 1.5rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle" />
+                <span class="slider"></span>
+            </label>
+            <span class="ms-2" id="theme-label">Dark Mode</span>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alert-container" class="alert-container"></div>
+
+        <div class="container app-container">
+            <div class="app-header">
+                <h1 class="app-title">Learning Navigator Results</h1>
+                <p class="app-subtitle">
+                    Subject: <strong>{{ subject }}</strong> | Goal:
+                    <strong>{{ goal }}</strong> <br /><small class="text-muted"
+                        >Session ID: {{ session_id }}</small
+                    >
+                </p>
+            </div>
+
+            <!-- Result Section -->
+            <div id="result-container">
+                <div class="card">
+                    <div
+                        class="card-header d-flex justify-content-between align-items-center"
+                    >
+                        <h3 class="mb-0">Your Diagnostic Results</h3>
+                        <div class="action-buttons-header">
+                            <button
+                                id="copy-link"
+                                class="btn btn-outline-light"
+                                title="Copy Link to Results"
+                            >
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
+                            <button
+                                id="download-pdf"
+                                class="btn btn-outline-light"
+                                title="Download as PDF (mock)"
+                            >
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button
+                                id="share-results"
+                                class="btn btn-outline-light"
+                                title="Share Results (mock)"
+                            >
+                                <i class="bi bi-share"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <!-- Changed from success -->
+                            <i class="bi bi-info-circle-fill"></i> Displaying
+                            your personalized results for session
+                            <strong>{{ session_id }}</strong>.
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Knowledge</h4>
+                            <div class="knowledge-view-toggle mb-3">
+                                <div class="btn-group" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary active"
+                                        id="knowledge-graph-btn"
+                                    >
+                                        Knowledge Map
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary"
+                                        id="knowledge-list-btn"
+                                    >
+                                        List View
+                                    </button>
+                                </div>
+                            </div>
+                            <div
+                                id="knowledge-graph"
+                                class="knowledge-graph"
+                            ></div>
+                            <div
+                                id="knowledge-list"
+                                class="knowledge-list"
+                                style="display: none"
+                            ></div>
+                        </div>
+
+                        <div class="row result-section">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <h4>Your Strengths</h4>
+                                <ul id="strengths-list" class="list-group"></ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Areas to Improve</h4>
+                                <ul id="gaps-list" class="list-group"></ul>
+                            </div>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Personalized Learning Roadmap</h4>
+                            <div class="tree-view-toggle">
+                                <div class="btn-group" role="group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary active"
+                                        id="list-view-btn"
+                                    >
+                                        List View
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary"
+                                        id="diagram-view-btn"
+                                    >
+                                        Diagram View
+                                    </button>
+                                </div>
+                            </div>
+                            <div
+                                id="roadmap-container"
+                                class="roadmap-container mt-3"
+                            ></div>
+                            <div
+                                id="roadmap-diagram"
+                                class="roadmap-diagram mt-3"
+                            ></div>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Recommendations</h4>
+                            <ul
+                                id="recommendations-list"
+                                class="list-group"
+                            ></ul>
+                        </div>
+
+                        <div class="result-section">
+                            <h4>Your Interests</h4>
+                            <p
+                                id="interests-display"
+                                class="p-3 bg-light rounded border"
+                            ></p>
+                            [data-bs-theme="dark"] #interests-display {
+                            background-color: #3a3f44; border-color: #555; }
+                        </div>
+
+                        <div class="action-buttons">
+                            <button
+                                id="download-roadmap"
+                                class="btn btn-primary"
+                            >
+                                <i class="bi bi-download"></i> Download Results
+                                (JSON)
+                            </button>
+                            <button
+                                id="print-roadmap"
+                                class="btn btn-outline-primary"
+                            >
+                                <i class="bi bi-printer"></i> Print Page
+                            </button>
+                            <a href="/" class="btn btn-outline-secondary">
+                                <i class="bi bi-plus-circle"></i> Start New
+                                Assessment
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // --- Global State Variables ---
+            // Data is passed directly from Flask template
+            const diagnosticResults = {{ diagnostic_result | tojson }};
+            const sessionId = "{{ session_id }}"; // Get session ID from template
+
+            // --- DOM Elements ---
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeLabel = document.getElementById('theme-label');
+            const alertContainer = document.getElementById('alert-container');
+
+            // --- Initialization ---
+            document.addEventListener('DOMContentLoaded', () => {
+                // Set initial theme
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && prefersDark)) {
+                    themeToggle.checked = true;
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                    themeLabel.textContent = 'Light Mode';
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    themeLabel.textContent = 'Dark Mode';
+                }
+
+                // Display results passed from Flask
+                if (diagnosticResults) {
+                    displayResults(diagnosticResults);
+                } else {
+                    showAlert('Error: Diagnostic results data not found.', 'danger');
+                }
+            });
+
+            // --- Theme Switcher ---
+            themeToggle.addEventListener('change', function () {
+                if (this.checked) {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                    themeLabel.textContent = 'Light Mode';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    themeLabel.textContent = 'Dark Mode';
+                    localStorage.setItem('theme', 'light');
+                }
+                // Re-render graphs if visible
+                if (diagnosticResults) {
+                     if (document.getElementById('knowledge-graph').style.display !== 'none') {
+                        createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                     }
+                     if (document.getElementById('roadmap-diagram').style.display !== 'none') {
+                        createRoadmapDiagram(diagnosticResults.learning_roadmap);
+                     }
+                }
+            });
+
+            // --- Result Display Logic (Adapted from index.html) ---
+            function displayResults(results) {
+                console.log("Displaying results:", results);
+
+                // Populate strengths
+                const strengthsList = document.getElementById('strengths-list');
+                strengthsList.innerHTML = results.diagnostic_summary?.strengths?.length > 0
+                    ? results.diagnostic_summary.strengths.map(s => `<li class="list-group-item">${marked.parseInline(s)}</li>`).join('')
+                    : '<li class="list-group-item text-muted">No specific strengths identified.</li>';
+
+                // Populate gaps
+                const gapsList = document.getElementById('gaps-list');
+                gapsList.innerHTML = results.diagnostic_summary?.gaps?.length > 0
+                    ? results.diagnostic_summary.gaps.map(g => `<li class="list-group-item">${marked.parseInline(g)}</li>`).join('')
+                    : '<li class="list-group-item text-muted">No specific areas for improvement identified.</li>';
+
+                // Create Knowledge Graph & List
+                if (results.knowledge_graph && results.knowledge_graph.nodes) {
+                    createKnowledgeGraph(results.knowledge_graph);
+                    createKnowledgeList(results.knowledge_graph);
+                    document.getElementById('knowledge-graph').style.display = 'block';
+                    document.getElementById('knowledge-list').style.display = 'none';
+                    document.getElementById('knowledge-graph-btn').classList.add('active', 'btn-primary');
+                    document.getElementById('knowledge-graph-btn').classList.remove('btn-outline-primary');
+                    document.getElementById('knowledge-list-btn').classList.remove('active', 'btn-primary');
+                    document.getElementById('knowledge-list-btn').classList.add('btn-outline-primary');
+                } else {
+                    document.getElementById('knowledge-graph').innerHTML = '<p class="text-center text-muted p-3">Knowledge map data not available.</p>';
+                    document.getElementById('knowledge-list').innerHTML = '<p class="text-center text-muted p-3">Knowledge list data not available.</p>';
+                }
+
+                // Populate roadmap list view
+                const roadmapContainer = document.getElementById('roadmap-container');
+                if (results.learning_roadmap && results.learning_roadmap.length > 0) {
+                    roadmapContainer.innerHTML = results.learning_roadmap.map((item, index) => `
+                        <div class="roadmap-item" data-id="${item.id || index}">
+                            <h5>${index + 1}. ${marked.parseInline(item.concept || 'Unnamed Step')}</h5>
+                            <p>${marked.parseInline(item.description || '')}</p>
+                            <p class="mb-1"><strong>Prerequisites:</strong> ${item.prerequisites?.join(', ') || 'None'}</p>
+                            <p><strong>Suggested Resources:</strong> ${item.resources?.join(', ') || 'General study'}</p>
+                        </div>
+                    `).join('');
+
+                    // Create Roadmap Diagram View
+                    createRoadmapDiagram(results.learning_roadmap);
+                    document.getElementById('roadmap-container').style.display = 'block';
+                    document.getElementById('roadmap-diagram').style.display = 'none';
+                    document.getElementById('list-view-btn').classList.add('active', 'btn-primary');
+                    document.getElementById('list-view-btn').classList.remove('btn-outline-primary');
+                    document.getElementById('diagram-view-btn').classList.remove('active', 'btn-primary');
+                    document.getElementById('diagram-view-btn').classList.add('btn-outline-primary');
+                } else {
+                    roadmapContainer.innerHTML = '<p class="text-center text-muted p-3">Learning roadmap not available.</p>';
+                    document.getElementById('roadmap-diagram').innerHTML = '<p class="text-center text-muted p-3">Roadmap diagram not available.</p>';
+                }
+
+                // Populate recommendations
+                const recommendationsList = document.getElementById('recommendations-list');
+                recommendationsList.innerHTML = results.recommendations?.length > 0
+                    ? results.recommendations.map(r => `<li class="list-group-item">${marked.parse(r)}</li>`).join('')
+                    : '<li class="list-group-item text-muted">No specific recommendations provided.</li>';
+
+                // Populate interests
+                document.getElementById('interests-display').textContent = results.user_interests?.join(', ') || 'No specific interests recorded.';
+            }
+
+            // --- d3 Visualizations (Copied from index.html, ensure they work standalone) ---
+
+            function createKnowledgeGraph(knowledgeData) {
+                const graphContainer = d3.select("#knowledge-graph");
+                graphContainer.html(""); // Clear previous graph
+
+                if (!knowledgeData || !knowledgeData.nodes || knowledgeData.nodes.length === 0) {
+                    graphContainer.append("div").attr("class", "text-center text-muted py-5").text("No knowledge data available for map view.");
+                    return;
+                }
+
+                const tooltip = graphContainer.append("div").attr("class", "node-tooltip").style("opacity", 0);
+                const width = graphContainer.node().getBoundingClientRect().width;
+                const height = 400; // Fixed height
+
+                const svg = graphContainer.append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                    .attr("viewBox", [0, 0, width, height])
+                    .style("max-width", "100%")
+                    .style("height", "auto");
+
+                const g = svg.append("g");
+
+                const zoom = d3.zoom().scaleExtent([0.3, 4]).on("zoom", (event) => {
+                    g.attr("transform", event.transform);
+                    g.selectAll("circle").attr("stroke-width", 2 / event.transform.k);
+                    g.selectAll(".link").attr("stroke-width", 1.5 / event.transform.k);
+                });
+                svg.call(zoom);
+
+                const validLinks = (knowledgeData.links || []).filter(link =>
+                    knowledgeData.nodes.find(n => n.id === link.source) &&
+                    knowledgeData.nodes.find(n => n.id === link.target)
+                );
+
+                const simulation = d3.forceSimulation(knowledgeData.nodes)
+                    .force("link", d3.forceLink(validLinks).id(d => d.id).distance(100).strength(0.5))
+                    .force("charge", d3.forceManyBody().strength(-350))
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("x", d3.forceX(width / 2).strength(0.05))
+                    .force("y", d3.forceY(height / 2).strength(0.05))
+                    .force("collision", d3.forceCollide().radius(30));
+
+                svg.append("defs").append("marker")
+                    .attr("id", "knowledge-arrow")
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 25)
+                    .attr("refY", 0)
+                    .attr("markerWidth", 5)
+                    .attr("markerHeight", 5)
+                    .attr("orient", "auto")
+                    .append("path")
+                    .attr("d", "M0,-5L10,0L0,5")
+                    .attr("fill", "#999");
+
+                const link = g.append("g").attr("class", "links")
+                    .selectAll("line").data(validLinks).join("line")
+                    .attr("class", "link")
+                    .attr("marker-end", "url(#knowledge-arrow)")
+                    .attr("stroke-dasharray", d => d.relationship === "relates_to" ? "4,4" : "none");
+
+                const node = g.append("g").attr("class", "nodes")
+                    .selectAll(".node").data(knowledgeData.nodes).join("g")
+                    .attr("class", "node knowledge-node")
+                    .call(drag(simulation));
+
+                node.append("circle")
+                    .attr("r", 14)
+                    .attr("class", d => `node-proficiency-${d.proficiency || "low"}`)
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition().duration(200).style("opacity", 0.9);
+                        tooltip.html(`<strong>${d.name || "Unnamed"}</strong><br>${d.description || "No description."}<br><em>Proficiency: ${d.proficiency || "Unknown"}</em>`);
+                        const [x, y] = d3.pointer(event, graphContainer.node());
+                        tooltip.style("left", (x + 15) + "px").style("top", (y - 28) + "px");
+                        highlightConnections(d, node, link, svg); // Pass svg
+                    })
+                    .on("mouseout", function() {
+                        tooltip.transition().duration(300).style("opacity", 0);
+                        resetHighlighting(node, link, svg); // Pass svg
+                    });
+
+                node.append("text")
+                    .attr("dx", 18)
+                    .attr("dy", ".35em")
+                    .attr("font-size", "11px")
+                    .text(d => d.name || "Unnamed");
+
+                simulation.on("tick", () => {
+                    link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+                });
+
+                // Initial theme application for links
+                resetHighlighting(node, link, svg);
+            }
+
+            function drag(simulation) { /* Drag functions remain the same */
+                function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+                function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+                function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
+                return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+            }
+
+            function highlightConnections(selectedNode, allNodes, allLinks, svg) { /* Highlighting logic remains the same */
+                const connectedNodeIds = new Set(); connectedNodeIds.add(selectedNode.id);
+                const currentZoom = d3.zoomTransform(svg.node()).k;
+                allLinks.each(function(l) {
+                    const linkElement = d3.select(this);
+                    if (l.source.id === selectedNode.id || l.target.id === selectedNode.id) {
+                        linkElement.transition().duration(150).attr("stroke", "#f00").attr("stroke-opacity", 1).attr("stroke-width", 2 / currentZoom);
+                        connectedNodeIds.add(l.source.id); connectedNodeIds.add(l.target.id);
+                    } else {
+                        linkElement.transition().duration(150).attr("stroke-opacity", 0.2);
+                    }
+                });
+                allNodes.each(function(n) {
+                    const nodeElement = d3.select(this);
+                    nodeElement.transition().duration(150).style("opacity", connectedNodeIds.has(n.id) ? 1 : 0.3);
+                });
+            }
+
+            function resetHighlighting(allNodes, allLinks, svg) { /* Reset highlighting logic remains the same */
+                const currentZoom = d3.zoomTransform(svg.node()).k;
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                allNodes.transition().duration(200).style("opacity", 1);
+                allLinks.transition().duration(200)
+                    .attr("stroke", isDark ? "#555" : "#ccc")
+                    .attr("stroke-opacity", 0.7)
+                    .attr("stroke-width", 1.5 / currentZoom);
+            }
+
+
+            function createKnowledgeList(knowledgeData) {
+                const knowledgeList = document.getElementById('knowledge-list');
+                knowledgeList.innerHTML = '';
+
+                if (!knowledgeData || !knowledgeData.nodes || knowledgeData.nodes.length === 0) {
+                    knowledgeList.innerHTML = "<p class='text-center text-muted py-3'>No knowledge data available for list view.</p>";
+                    return;
+                }
+
+                const proficiencyGroups = { high: [], medium: [], low: [], unknown: [] };
+                knowledgeData.nodes.forEach(node => {
+                    (proficiencyGroups[node.proficiency] || proficiencyGroups.unknown).push(node);
+                });
+
+                const createSection = (title, items) => {
+                    if (items.length === 0) return '';
+                    return `
+                        <div class="mb-3">
+                            <h5>${title}</h5>
+                            <ul class="list-group">
+                                ${items.map(item => `
+                                    <li class="list-group-item">
+                                        <strong>${marked.parseInline(item.name || 'Unnamed')}</strong>
+                                        <p class="mb-0 mt-1" style="font-size: 0.875rem;">${marked.parseInline(item.description || 'No description.')}</p>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                };
+
+                knowledgeList.innerHTML = createSection('Strong Knowledge', proficiencyGroups.high) +
+                                          createSection('Familiar', proficiencyGroups.medium) +
+                                          createSection('Basic Understanding / Needs Review', proficiencyGroups.low) +
+                                          createSection('Proficiency Not Assessed', proficiencyGroups.unknown);
+            }
+
+            function createRoadmapDiagram(roadmapData) {
+                const container = document.getElementById('roadmap-diagram');
+                container.innerHTML = ''; // Clear previous diagram
+
+                if (!roadmapData || roadmapData.length === 0) {
+                    container.innerHTML = "<p class='text-center text-muted py-5'>No roadmap data available for diagram view.</p>";
+                    return;
+                }
+
+                const stageGroups = { beginner: [], intermediate: [], advanced: [], other: [] };
+                const conceptToIdMap = {};
+                let idCounter = 0;
+
+                roadmapData.forEach((item, index) => {
+                    if (!item.id || conceptToIdMap[item.concept]) { item.id = `roadmap-node-${idCounter++}`; }
+                    conceptToIdMap[item.concept] = item.id;
+                    const stage = item.stage?.toLowerCase() || 'other';
+                    (stageGroups[stage] || stageGroups.other).push(item);
+                });
+
+                const arrowsContainer = document.createElement('div');
+                arrowsContainer.className = 'roadmap-arrows';
+                const arrowsSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                arrowsContainer.appendChild(arrowsSvg);
+
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+                marker.setAttribute('id', 'arrowhead');
+                marker.setAttribute('viewBox', '0 -5 10 10');
+                marker.setAttribute('refX', '8');
+                marker.setAttribute('refY', '0');
+                marker.setAttribute('markerWidth', '5');
+                marker.setAttribute('markerHeight', '5');
+                marker.setAttribute('orient', 'auto');
+                const pathMarker = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pathMarker.setAttribute('d', 'M0,-5L10,0L0,5');
+                pathMarker.setAttribute('fill', '#adb5bd');
+                marker.appendChild(pathMarker);
+                defs.appendChild(marker);
+                arrowsSvg.appendChild(defs);
+
+                const stageOrder = ['beginner', 'intermediate', 'advanced', 'other'];
+                stageOrder.forEach(stageKey => {
+                    const group = stageGroups[stageKey];
+                    if (group.length > 0) {
+                        const stageSection = document.createElement('div');
+                        stageSection.className = 'roadmap-stage';
+                        stageSection.dataset.stage = stageKey;
+                        const stageTitle = document.createElement('h5');
+                        stageTitle.className = 'roadmap-stage-title';
+                        stageTitle.textContent = stageKey.charAt(0).toUpperCase() + stageKey.slice(1);
+                        stageSection.appendChild(stageTitle);
+                        const stageItems = document.createElement('div');
+                        stageItems.className = 'roadmap-stage-items';
+                        group.forEach(item => {
+                            const itemNode = document.createElement('div');
+                            itemNode.className = 'roadmap-node';
+                            itemNode.id = item.id;
+                            itemNode.innerHTML = `
+                                <h5>${marked.parseInline(item.concept || 'Unnamed Step')}</h5>
+                                <div class="roadmap-node-description">${marked.parseInline(item.description || '')}</div>
+                                ${item.prerequisites && item.prerequisites.length > 0 ? `
+                                <div class="roadmap-node-prereq">
+                                    <strong>Prerequisites:</strong> ${item.prerequisites.join(', ')}
+                                </div>` : ''}
+                            `;
+                            stageItems.appendChild(itemNode);
+                        });
+                        stageSection.appendChild(stageItems);
+                        container.appendChild(stageSection);
+                    }
+                });
+
+                container.appendChild(arrowsContainer);
+
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        drawRoadmapConnections(roadmapData, arrowsSvg, conceptToIdMap);
+                    }, 50);
+                });
+            }
+
+            function drawRoadmapConnections(roadmapData, svg, conceptToIdMap) {
+                const children = Array.from(svg.children);
+                children.forEach(child => { if (child.tagName.toLowerCase() !== 'defs') { svg.removeChild(child); } });
+
+                const container = svg.parentElement.parentElement;
+                const containerRect = container.getBoundingClientRect();
+                if (containerRect.width === 0 || containerRect.height === 0) { return; }
+
+                svg.setAttribute('width', container.scrollWidth);
+                svg.setAttribute('height', container.scrollHeight);
+
+                roadmapData.forEach(item => {
+                    if (item.prerequisites && item.prerequisites.length > 0) {
+                        const targetElement = document.getElementById(item.id);
+                        if (!targetElement) return;
+                        const targetRect = targetElement.getBoundingClientRect();
+
+                        item.prerequisites.forEach(prereqConcept => {
+                            const sourceId = conceptToIdMap[prereqConcept];
+                            if (!sourceId) return;
+                            const sourceElement = document.getElementById(sourceId);
+                            if (!sourceElement) return;
+                            const sourceRect = sourceElement.getBoundingClientRect();
+
+                            const startX = sourceRect.left + sourceRect.width / 2 - containerRect.left + container.scrollLeft;
+                            const startY = sourceRect.bottom - containerRect.top + container.scrollTop;
+                            const endX = targetRect.left + targetRect.width / 2 - containerRect.left + container.scrollLeft;
+                            const endY = targetRect.top - containerRect.top + container.scrollTop;
+
+                            const offsetY = 5;
+                            const adjustedStartY = startY + offsetY;
+                            const adjustedEndY = endY - offsetY;
+
+                            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                            const dx = endX - startX;
+                            const dy = adjustedEndY - adjustedStartY;
+                            const curveFactor = 0.3;
+                            const cp1x = startX;
+                            const cp1y = adjustedStartY + dy * curveFactor;
+                            const cp2x = endX;
+                            const cp2y = adjustedEndY - dy * curveFactor;
+                            const d = `M ${startX},${adjustedStartY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${adjustedEndY}`;
+
+                            path.setAttribute('d', d);
+                            path.setAttribute('class', 'roadmap-arrow');
+                            path.setAttribute('marker-end', 'url(#arrowhead)');
+                            svg.appendChild(path);
+                        });
+                    }
+                });
+                // Update marker color based on theme
+                const theme = document.documentElement.getAttribute('data-bs-theme');
+                d3.select(svg).select('#arrowhead path').attr('fill', theme === 'dark' ? '#666' : '#adb5bd');
+            }
+
+
+            // --- View Toggles (Knowledge & Roadmap) ---
+            document.getElementById('knowledge-graph-btn').addEventListener('click', function() {
+                toggleActiveButton(this, document.getElementById('knowledge-list-btn'));
+                document.getElementById('knowledge-graph').style.display = 'block';
+                document.getElementById('knowledge-list').style.display = 'none';
+                if (diagnosticResults?.knowledge_graph) createKnowledgeGraph(diagnosticResults.knowledge_graph);
+            });
+
+            document.getElementById('knowledge-list-btn').addEventListener('click', function() {
+                toggleActiveButton(this, document.getElementById('knowledge-graph-btn'));
+                document.getElementById('knowledge-graph').style.display = 'none';
+                document.getElementById('knowledge-list').style.display = 'block';
+            });
+
+            document.getElementById('list-view-btn').addEventListener('click', function() {
+                toggleActiveButton(this, document.getElementById('diagram-view-btn'));
+                document.getElementById('roadmap-container').style.display = 'block';
+                document.getElementById('roadmap-diagram').style.display = 'none';
+            });
+
+            document.getElementById('diagram-view-btn').addEventListener('click', function() {
+                toggleActiveButton(this, document.getElementById('list-view-btn'));
+                document.getElementById('roadmap-container').style.display = 'none';
+                document.getElementById('roadmap-diagram').style.display = 'block';
+                if (diagnosticResults?.learning_roadmap) {
+                    createRoadmapDiagram(diagnosticResults.learning_roadmap);
+                }
+            });
+
+            function toggleActiveButton(activeBtn, inactiveBtn) {
+                activeBtn.classList.add('active', 'btn-primary');
+                activeBtn.classList.remove('btn-outline-primary');
+                inactiveBtn.classList.remove('active', 'btn-primary');
+                inactiveBtn.classList.add('btn-outline-primary');
+            }
+
+            // --- Utility Functions ---
+            function showAlert(message, type = 'info', duration = 5000) {
+                const existingAlert = alertContainer.querySelector(`.alert-${type}`);
+                if (existingAlert) { existingAlert.remove(); }
+
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show m-2`;
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+                alertContainer.appendChild(alertDiv);
+
+                if (duration > 0) {
+                    setTimeout(() => {
+                        const bsAlert = bootstrap.Alert.getInstance(alertDiv);
+                        if (bsAlert) { bsAlert.close(); }
+                        else { alertDiv.remove(); }
+                    }, duration);
+                }
+            }
+
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAlert('Link copied to clipboard!', 'success');
+                }, (err) => {
+                    console.error('Clipboard copy failed: ', err);
+                    showAlert('Failed to copy link.', 'danger');
+                });
+            }
+
+            // --- Action Buttons (Results Page) ---
+            document.getElementById('download-roadmap').addEventListener('click', function() {
+                if (!diagnosticResults) { showAlert('No results available to download.', 'warning'); return; }
+                try {
+                    const filename = `learning_navigator_results_${sessionId}.json`;
+                    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(diagnosticResults, null, 2));
+                    const downloadAnchorNode = document.createElement('a');
+                    downloadAnchorNode.setAttribute('href', dataStr);
+                    downloadAnchorNode.setAttribute('download', filename);
+                    document.body.appendChild(downloadAnchorNode);
+                    downloadAnchorNode.click();
+                    downloadAnchorNode.remove();
+                    showAlert('Results JSON downloaded successfully!', 'success');
+                } catch (error) {
+                    console.error('Error creating download link:', error);
+                    showAlert('Failed to prepare download.', 'danger');
+                }
+            });
+
+            document.getElementById('print-roadmap').addEventListener('click', function() { window.print(); });
+
+            document.getElementById('copy-link').addEventListener('click', function() {
+                copyToClipboard(window.location.href);
+            });
+
+            document.getElementById('share-results').addEventListener('click', function() {
+                const shareUrl = window.location.href;
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'My Learning Roadmap',
+                        text: 'Check out my personalized learning roadmap from Learning Navigator!',
+                        url: shareUrl,
+                    }).then(() => showAlert('Shared successfully!', 'success'))
+                      .catch((error) => {
+                          console.log('Share API error:', error);
+                          // Fallback to clipboard if share fails or is cancelled
+                          copyToClipboard(shareUrl);
+                      });
+                } else {
+                    copyToClipboard(shareUrl); // Fallback for browsers without Share API
+                }
+            });
+
+            document.getElementById('download-pdf').addEventListener('click', function() {
+                showAlert('Generating PDF... (This is a mock feature)', 'info', 3000);
+            });
+
+            // --- Window Resize Listener ---
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (diagnosticResults) {
+                        if (document.getElementById('knowledge-graph').style.display !== 'none' && diagnosticResults.knowledge_graph) {
+                            createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                        }
+                        if (document.getElementById('roadmap-diagram').style.display !== 'none' && diagnosticResults.learning_roadmap) {
+                            createRoadmapDiagram(diagnosticResults.learning_roadmap);
+                        }
+                    }
+                }, 250);
+            });
+        </script>
+    </body>
+</html>

@@ -1,40 +1,30 @@
 import json
 import os
+import sqlite3
 import uuid
+from datetime import datetime
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, session
+from flask import Flask, abort, g, jsonify, render_template, request
 from google import genai
 from google.genai import types
 
 load_dotenv()
 
+# --- App Setup ---
 app = Flask(__name__)
-# Use Flask's session mechanism for storing session_id server-side if needed,
-# but the primary session management here relies on client sending session_id
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
+DATABASE = "diagnostic_sessions.db"
 
-# Initialize Gemini client
-# Ensure API key is set in your .env file or environment variables
+# --- Gemini Client Setup ---
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
-
-# Use specific client initialization if needed, otherwise default works
-# client = genai.Client(api_key=api_key) # Default client creation
-# Forcing specific transport if needed (usually not required)
-# genai.configure(transport='rest', api_key=api_key)
-# client = genai.GenerativeModel(...) # This is for the newer API style, stick to Client for now
-
-# Using the Client API as originally intended
 client = genai.Client(api_key=api_key)
-
-# Model names as defined
-# model = "gemini-2.5-pro-exp-03-25" # Keep commented if flash is preferred for speed
 model = "gemini-2.0-flash-thinking-exp-01-21"
 final_model = "gemini-2.5-pro-exp-03-25"
 
-# System instructions for the diagnostic assistant
+# --- System Instructions (Unchanged) ---
 SYSTEM_INSTRUCTIONS = """
 You are an AI Learning Navigator.
 
@@ -76,49 +66,111 @@ Interaction Principles:
 """
 
 
-class DiagnosticSession:
-    def __init__(self, subject, goal, age=None, grade=None):
-        self.session_id = str(uuid.uuid4())
-        self.subject = subject
-        self.goal = goal
-        self.age = age
-        self.grade = grade
-        self.conversation_history = []
-        self.diagnostic_result = None
-        # Store initial user info for context
-        self.initial_user_info = {
-            "subject": subject,
-            "goal": goal,
-            "age": age,
-            "grade": grade,
-        }
+# --- Database Helper Functions ---
+def get_db():
+    """Connects to the specific database."""
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
+        g.db.row_factory = sqlite3.Row  # Return rows as dictionary-like objects
+    return g.db
 
-    def add_message(self, role, content):
-        self.conversation_history.append({"role": role, "content": content})
 
-    def get_conversation_contents(self):
-        contents = []
-        # Prepend initial context if needed, or rely on first user message
-        for msg in self.conversation_history:
-            # Map roles correctly for the API
-            api_role = "user" if msg["role"] == "user" else "model"
-            contents.append(
-                types.Content(
-                    role=api_role,
-                    parts=[types.Part.from_text(text=msg["content"])],
-                )
+@app.teardown_appcontext
+def close_db(e=None):
+    """Closes the database again at the end of the request."""
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+def init_db():
+    """Initializes the database schema."""
+    db = sqlite3.connect(DATABASE)
+    cursor = db.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS diagnostic_sessions (
+            session_id TEXT PRIMARY KEY,
+            subject TEXT NOT NULL,
+            goal TEXT NOT NULL,
+            age INTEGER,
+            grade TEXT,
+            conversation_history TEXT, -- Store as JSON string
+            diagnostic_result TEXT,    -- Store as JSON string
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    # Add an index for faster lookups
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_session_id ON diagnostic_sessions (session_id);
+    """)
+    db.commit()
+    db.close()
+    print("Database initialized.")
+
+
+# Call init_db() once when the app starts
+with app.app_context():
+    init_db()
+
+
+# --- Helper to get conversation contents for API ---
+def get_conversation_contents_from_history(history_list):
+    """Converts a list of history dicts to GenAI Content objects."""
+    contents = []
+    for msg in history_list:
+        api_role = "user" if msg["role"] == "user" else "model"
+        contents.append(
+            types.Content(
+                role=api_role,
+                parts=[types.Part.from_text(text=msg["content"])],
             )
-        return contents
+        )
+    return contents
 
 
-# Store active diagnostic sessions in memory (consider a database for persistence)
-diagnostic_sessions = {}
-
-
+# --- Routes ---
 @app.route("/")
 def index():
-    # Render the main HTML page
+    # Render the main interactive HTML page
     return render_template("index.html")
+
+
+@app.route("/result/<string:session_id>")
+def view_result(session_id):
+    """Displays a previously completed diagnostic result."""
+    db = get_db()
+    session_data = db.execute(
+        "SELECT session_id, subject, goal, diagnostic_result FROM diagnostic_sessions WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+
+    if session_data is None:
+        abort(404, description="Session not found.")
+
+    if not session_data["diagnostic_result"]:
+        # Maybe render a different template or show a message
+        return render_template(
+            "result_pending.html",
+            session_id=session_id,
+            subject=session_data["subject"],
+            goal=session_data["goal"],
+        )
+        # abort(404, description="Diagnostic result not yet available for this session.")
+
+    try:
+        diagnostic_result = json.loads(session_data["diagnostic_result"])
+    except json.JSONDecodeError:
+        print(f"Error decoding diagnostic_result JSON for session {session_id}")
+        abort(500, description="Failed to load diagnostic result data.")
+
+    return render_template(
+        "result_display.html",
+        session_id=session_id,
+        subject=session_data["subject"],
+        goal=session_data["goal"],
+        diagnostic_result=diagnostic_result,
+    )
 
 
 @app.route("/api/start-diagnostic", methods=["POST"])
@@ -132,9 +184,7 @@ def start_diagnostic():
     if not subject or not goal:
         return jsonify({"error": "Subject and Goal are required"}), 400
 
-    # Create a new diagnostic session
-    diag_session = DiagnosticSession(subject, goal, age, grade)
-    diagnostic_sessions[diag_session.session_id] = diag_session
+    session_id = str(uuid.uuid4())
 
     # Format the initial message from the user perspective
     initial_prompt = f"I want to learn about {subject}. My main goal is to {goal}."
@@ -144,19 +194,48 @@ def start_diagnostic():
         initial_prompt += f" I'm in grade {grade}."
     initial_prompt += " Can you help me figure out what I know and what I need to learn next? Let's start with some questions."
 
-    # Add the user's initial statement to the history
-    diag_session.add_message("user", initial_prompt)
+    # Initial conversation history
+    conversation_history = [{"role": "user", "content": initial_prompt}]
 
     # Generate the assistant's first response using the faster model
-    response_text = generate_response(diag_session, model_name=model)
+    contents = get_conversation_contents_from_history(conversation_history)
+    response_text = generate_response(contents, model_name=model)
 
     if response_text is None:
         return jsonify(
             {"error": "Failed to generate initial response from AI model"}
         ), 500
 
+    # Add assistant's response to history
+    conversation_history.append({"role": "assistant", "content": response_text})
+
+    # Store the new session in the database
+    db = get_db()
+    try:
+        db.execute(
+            """
+            INSERT INTO diagnostic_sessions (session_id, subject, goal, age, grade, conversation_history, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                session_id,
+                subject,
+                goal,
+                age if age else None,
+                grade,
+                json.dumps(conversation_history),
+                datetime.now(),
+            ),
+        )
+        db.commit()
+        print(f"Started new diagnostic session: {session_id}")
+    except sqlite3.Error as e:
+        db.rollback()
+        print(f"Database error on start: {e}")
+        return jsonify({"error": "Failed to save session to database"}), 500
+
     # Return session ID and the first message from the assistant
-    return jsonify({"session_id": diag_session.session_id, "message": response_text})
+    return jsonify({"session_id": session_id, "message": response_text})
 
 
 @app.route("/api/continue-diagnostic", methods=["POST"])
@@ -168,28 +247,61 @@ def continue_diagnostic():
     if not session_id or not message:
         return jsonify({"error": "Session ID and message are required"}), 400
 
-    if session_id not in diagnostic_sessions:
+    db = get_db()
+    session_data = db.execute(
+        "SELECT conversation_history, diagnostic_result FROM diagnostic_sessions WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+
+    if session_data is None:
         return jsonify({"error": "Session not found"}), 404
 
-    diag_session = diagnostic_sessions[session_id]
+    # Check if diagnostic is already completed
+    if session_data["diagnostic_result"]:
+        return jsonify(
+            {
+                "message": "This diagnostic session is already complete.",
+                "is_complete": True,
+            }
+        ), 200
 
-    # Add user's message to history
-    diag_session.add_message("user", message)
+    try:
+        conversation_history = json.loads(session_data["conversation_history"])
+    except (TypeError, json.JSONDecodeError):
+        print(f"Error decoding history JSON for session {session_id}")
+        return jsonify({"error": "Failed to load conversation history"}), 500
+
+    # Add user's message to history (in memory first)
+    conversation_history.append({"role": "user", "content": message})
 
     # Generate the assistant's response using the faster model
-    response_text = generate_response(diag_session, model_name=model)
+    contents = get_conversation_contents_from_history(conversation_history)
+    response_text = generate_response(contents, model_name=model)
 
     if response_text is None:
+        # Don't save the user message if AI failed to respond
         return jsonify({"error": "Failed to generate response from AI model"}), 500
 
-    # Check if the session is considered complete (though completion is usually triggered explicitly)
-    is_complete = diag_session.diagnostic_result is not None
+    # Add assistant's response to history
+    conversation_history.append({"role": "assistant", "content": response_text})
+
+    # Update the database
+    try:
+        db.execute(
+            "UPDATE diagnostic_sessions SET conversation_history = ?, updated_at = ? WHERE session_id = ?",
+            (json.dumps(conversation_history), datetime.now(), session_id),
+        )
+        db.commit()
+    except sqlite3.Error as e:
+        db.rollback()
+        print(f"Database error on continue: {e}")
+        return jsonify({"error": "Failed to update session in database"}), 500
 
     return jsonify(
         {
             "message": response_text,
-            "is_complete": is_complete,  # This might always be false here
-            "diagnostic_result": diag_session.diagnostic_result,  # Usually null until /complete
+            "is_complete": False,  # Completion is triggered by /complete endpoint
+            "diagnostic_result": None,
         }
     )
 
@@ -202,15 +314,31 @@ def complete_diagnostic():
     if not session_id:
         return jsonify({"error": "Session ID is required"}), 400
 
-    if session_id not in diagnostic_sessions:
+    db = get_db()
+    session_data = db.execute(
+        "SELECT conversation_history, diagnostic_result FROM diagnostic_sessions WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+
+    if session_data is None:
         return jsonify({"error": "Session not found"}), 404
 
-    diag_session = diagnostic_sessions[session_id]
-
     # Prevent re-completion if results already exist
-    if diag_session.diagnostic_result:
+    if session_data["diagnostic_result"]:
         print(f"Diagnostic for session {session_id} already completed.")
-        return jsonify({"diagnostic_result": diag_session.diagnostic_result})
+        try:
+            existing_result = json.loads(session_data["diagnostic_result"])
+            return jsonify({"diagnostic_result": existing_result})
+        except (TypeError, json.JSONDecodeError):
+            return jsonify({"error": "Failed to parse existing diagnostic result"}), 500
+
+    try:
+        conversation_history = json.loads(session_data["conversation_history"])
+    except (TypeError, json.JSONDecodeError):
+        print(f"Error decoding history JSON for completion: {session_id}")
+        return jsonify(
+            {"error": "Failed to load conversation history for completion"}
+        ), 500
 
     # Add a final instruction to the conversation history for the powerful model
     completion_prompt = """
@@ -259,15 +387,14 @@ def complete_diagnostic():
     Map prerequisites in the roadmap using the 'concept' names.
     """
 
-    diag_session.add_message("user", completion_prompt)
+    # Temporarily add the prompt for the API call
+    conversation_history.append({"role": "user", "content": completion_prompt})
+    contents = get_conversation_contents_from_history(conversation_history)
+    # Remove the prompt after creating contents, so it's not saved permanently
+    conversation_history.pop()
 
     # Generate the final result using the more powerful model
-    response_text = generate_response(
-        diag_session, model_name=final_model, force_json=True
-    )
-
-    # Remove the last user message (the prompt) from history after getting the response
-    diag_session.conversation_history.pop()
+    response_text = generate_response(contents, model_name=final_model, force_json=True)
 
     if response_text is None:
         return jsonify(
@@ -277,9 +404,7 @@ def complete_diagnostic():
     try:
         # Attempt to parse the JSON response directly
         diagnostic_result = json.loads(response_text)
-        diag_session.diagnostic_result = diagnostic_result  # Store the result
-        print(f"Diagnostic result generated for session {session_id}")
-        return jsonify({"diagnostic_result": diagnostic_result})
+        diagnostic_result_json = response_text  # Store the raw JSON string
 
     except json.JSONDecodeError as e:
         print(f"JSONDecodeError: {e}")
@@ -295,13 +420,14 @@ def complete_diagnostic():
             elif "```" in response_text:
                 extracted_json = response_text.split("```")[1].split("```")[0].strip()
             else:
-                # Assume the whole text might be JSON, maybe with leading/trailing issues
-                extracted_json = response_text.strip()
+                extracted_json = (
+                    response_text.strip()
+                )  # Assume the whole text might be JSON
 
             diagnostic_result = json.loads(extracted_json)
-            diag_session.diagnostic_result = diagnostic_result  # Store the result
+            diagnostic_result_json = extracted_json  # Store the extracted JSON string
             print(f"Diagnostic result extracted and parsed for session {session_id}")
-            return jsonify({"diagnostic_result": diagnostic_result})
+
         except (IndexError, json.JSONDecodeError) as inner_e:
             print(
                 f"Failed to extract/parse JSON even after attempting cleanup: {inner_e}"
@@ -309,22 +435,33 @@ def complete_diagnostic():
             return jsonify(
                 {
                     "error": "Failed to parse diagnostic result from model response.",
-                    "raw_response": response_text,  # Send raw response for debugging
+                    "raw_response": response_text,
                 }
             ), 500
 
+    # Store the final result in the database
+    try:
+        db.execute(
+            "UPDATE diagnostic_sessions SET diagnostic_result = ?, updated_at = ? WHERE session_id = ?",
+            (diagnostic_result_json, datetime.now(), session_id),
+        )
+        # Optionally update conversation history as well if needed, but usually not required after completion
+        # db.execute(
+        #     'UPDATE diagnostic_sessions SET conversation_history = ?, diagnostic_result = ?, updated_at = ? WHERE session_id = ?',
+        #     (json.dumps(conversation_history), diagnostic_result_json, datetime.now(), session_id)
+        # )
+        db.commit()
+        print(f"Diagnostic result saved for session {session_id}")
+        return jsonify({"diagnostic_result": diagnostic_result})
+    except sqlite3.Error as e:
+        db.rollback()
+        print(f"Database error on complete: {e}")
+        return jsonify({"error": "Failed to save final result to database"}), 500
 
-def generate_response(diag_session, model_name, force_json=False):
+
+def generate_response(conversation_contents, model_name, force_json=False):
     """Generates a response from the specified Gemini model."""
-    contents = diag_session.get_conversation_contents()
 
-    # Configure generation parameters
-    # gen_config_params = {
-    #     "temperature": 0.7,  # Adjust for creativity vs consistency
-    #     "top_p": 0.95,
-    #     "top_k": 40,
-    #     # "max_output_tokens": 2048, # Set if needed
-    # }
     gen_config_params = {}
     if force_json:
         gen_config_params["response_mime_type"] = "application/json"
@@ -340,42 +477,38 @@ def generate_response(diag_session, model_name, force_json=False):
     )
 
     try:
-        # Use the client.generate_content method which is standard
+        # Use the client.generate_content method
+        # Ensure model name is prefixed correctly if needed by the library version
+        # Example: 'models/gemini-...' if required, but usually just the name works
         response = client.models.generate_content(
-            model=model_name,  # Ensure model name is prefixed correctly
-            contents=contents,
+            model=model_name,
+            contents=conversation_contents,
             config=generate_content_config,
-            # stream=False # Ensure non-streaming for single response
         )
 
-        # Handle potential lack of response or errors
         if not response.candidates:
             print(f"Warning: Model {model_name} returned no candidates.")
-            # Check for prompt feedback if available
             if response.prompt_feedback:
                 print(f"Prompt Feedback: {response.prompt_feedback}")
-            return None  # Indicate failure
+            return None
 
-        # Assuming the first candidate is the one we want
         response_text = response.candidates[0].content.parts[0].text
-
-        # Add assistant's response to history *only if* it's not the final JSON result
-        # The final JSON result isn't part of the ongoing conversation flow.
-        if not force_json:
-            diag_session.add_message("assistant", response_text)
-
         return response_text
 
     except Exception as e:
-        # Log the error for debugging
         print(f"Error during Gemini API call with model {model_name}: {e}")
-        # Consider more specific error handling based on google.api_core.exceptions
         if hasattr(e, "message"):
             print(f"API Error Message: {e.message}")
-        return None  # Indicate failure
+        # Handle specific API errors if needed
+        # from google.api_core import exceptions as google_exceptions
+        # if isinstance(e, google_exceptions.GoogleAPIError):
+        #     print(f"Google API Error: {e.status_code} - {e.message}")
+        return None
 
 
 if __name__ == "__main__":
-    # Use host='0.0.0.0' to make it accessible on the network
-    # debug=True enables auto-reloading and detailed error pages (disable in production)
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # Ensure the database is initialized before running
+    # init_db() # Already called within app context above
+    app.run(
+        host="0.0.0.0", port=5000, debug=False
+    )  # Use debug=False for production/stable testing
