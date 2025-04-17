@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Result Pending - Learning Navigator</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        />
+        <style>
+            /* Minimal styling - can copy from other templates if needed */
+            body {
+                padding-top: 4rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container text-center">
+            <h1 class="display-5 mb-4">Learning Navigator</h1>
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">
+                    <i class="bi bi-hourglass-split"></i> List of Results
+                </h4>
+                <!-- sessions = dict of session_id, subject, goal, created_at -->
+                {% for session in sessions %}
+                <p>
+                    <strong>Session ID:</strong>
+                    <a href="/result/{{ session.session_id }}" target="_blank"
+                        >{{ session.session_id }}</a
+                    ><br />
+                    <strong>Subject:</strong> {{ session.subject }}<br />
+                    <strong>Goal:</strong> {{ session.goal }}<br />
+                    <strong>Created At:</strong> {{ session.created_at }}<br />
+                </p>
+                <hr />
+                {% endfor %}
+            </div>
+            <a href="/" class="btn btn-primary mt-3">
+                <i class="bi bi-house-door-fill"></i> Go to Home
+            </a>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

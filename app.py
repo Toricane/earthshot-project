@@ -173,6 +173,16 @@ def view_result(session_id):
     )
 
 
+@app.route("/results")
+def display_results():
+    """Displays a list of all completed diagnostic sessions."""
+    db = get_db()
+    sessions = db.execute(
+        "SELECT session_id, subject, goal, created_at FROM diagnostic_sessions WHERE diagnostic_result IS NOT NULL ORDER BY created_at DESC"
+    ).fetchall()
+    return render_template("results_list.html", sessions=sessions)
+
+
 @app.route("/api/start-diagnostic", methods=["POST"])
 def start_diagnostic():
     data = request.json
