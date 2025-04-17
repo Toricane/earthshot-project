@@ -1,3 +1,5 @@
+# --- START OF FILE app.py ---
+
 import json
 import os
 import sqlite3
@@ -20,6 +22,7 @@ DATABASE = "diagnostic_sessions.db"
 api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
+# NOTE: Using genai.Client directly as per user instruction, even if configure might be preferred elsewhere.
 client = genai.Client(api_key=api_key)
 model = "gemini-2.0-flash-thinking-exp-01-21"
 final_model = "gemini-2.5-pro-exp-03-25"
@@ -138,10 +141,13 @@ def index():
 
 @app.route("/result/<string:session_id>")
 def view_result(session_id):
-    """Displays a previously completed diagnostic result."""
+    """Displays a previously completed diagnostic result, including setup and conversation."""
     db = get_db()
     session_data = db.execute(
-        "SELECT session_id, subject, goal, diagnostic_result FROM diagnostic_sessions WHERE session_id = ?",
+        """SELECT session_id, subject, goal, age, grade,
+                  conversation_history, diagnostic_result
+           FROM diagnostic_sessions
+           WHERE session_id = ?""",
         (session_id,),
     ).fetchone()
 
@@ -149,26 +155,36 @@ def view_result(session_id):
         abort(404, description="Session not found.")
 
     if not session_data["diagnostic_result"]:
-        # Maybe render a different template or show a message
+        # Render pending page if result is not ready
         return render_template(
             "result_pending.html",
             session_id=session_id,
             subject=session_data["subject"],
             goal=session_data["goal"],
         )
-        # abort(404, description="Diagnostic result not yet available for this session.")
 
     try:
         diagnostic_result = json.loads(session_data["diagnostic_result"])
-    except json.JSONDecodeError:
+    except (TypeError, json.JSONDecodeError):
         print(f"Error decoding diagnostic_result JSON for session {session_id}")
         abort(500, description="Failed to load diagnostic result data.")
+
+    try:
+        # Also load conversation history
+        conversation_history = json.loads(session_data["conversation_history"] or "[]")
+    except (TypeError, json.JSONDecodeError):
+        print(f"Error decoding conversation_history JSON for session {session_id}")
+        # Don't abort, just pass empty history or handle in template
+        conversation_history = []
 
     return render_template(
         "result_display.html",
         session_id=session_id,
         subject=session_data["subject"],
         goal=session_data["goal"],
+        age=session_data["age"],
+        grade=session_data["grade"],
+        conversation_history=conversation_history,  # Pass parsed history
         diagnostic_result=diagnostic_result,
     )
 
@@ -398,10 +414,11 @@ def complete_diagnostic():
     """
 
     # Temporarily add the prompt for the API call
-    conversation_history.append({"role": "user", "content": completion_prompt})
-    contents = get_conversation_contents_from_history(conversation_history)
-    # Remove the prompt after creating contents, so it's not saved permanently
-    conversation_history.pop()
+    conversation_history_for_api = conversation_history + [
+        {"role": "user", "content": completion_prompt}
+    ]
+    contents = get_conversation_contents_from_history(conversation_history_for_api)
+    # Note: We don't modify the original conversation_history list here
 
     # Generate the final result using the more powerful model
     response_text = generate_response(contents, model_name=final_model, force_json=True)
@@ -455,11 +472,8 @@ def complete_diagnostic():
             "UPDATE diagnostic_sessions SET diagnostic_result = ?, updated_at = ? WHERE session_id = ?",
             (diagnostic_result_json, datetime.now(), session_id),
         )
-        # Optionally update conversation history as well if needed, but usually not required after completion
-        # db.execute(
-        #     'UPDATE diagnostic_sessions SET conversation_history = ?, diagnostic_result = ?, updated_at = ? WHERE session_id = ?',
-        #     (json.dumps(conversation_history), diagnostic_result_json, datetime.now(), session_id)
-        # )
+        # We don't need to update conversation_history here as it hasn't changed
+        # since the last /continue-diagnostic call.
         db.commit()
         print(f"Diagnostic result saved for session {session_id}")
         return jsonify({"diagnostic_result": diagnostic_result})
@@ -478,22 +492,28 @@ def generate_response(conversation_contents, model_name, force_json=False):
     else:
         gen_config_params["response_mime_type"] = "text/plain"
 
+    # Construct GenerateContentConfig using the dictionary
     generate_content_config = types.GenerateContentConfig(
-        **gen_config_params,
-        system_instruction=[
-            types.Part.from_text(text=SYSTEM_INSTRUCTIONS),
-        ],
+        **gen_config_params
+        # system_instruction is now part of the model config, not GenerateContentConfig
         # safety_settings=... # Add safety settings if needed
     )
 
+    # Prepare model configuration including system instruction
+    model_config = types.Model(
+        name=f"models/{model_name}",  # Ensure model name is prefixed correctly
+        system_instruction=[
+            types.Part.from_text(text=SYSTEM_INSTRUCTIONS),
+        ],
+        # Add other model parameters if needed
+    )
+
     try:
-        # Use the client.generate_content method
-        # Ensure model name is prefixed correctly if needed by the library version
-        # Example: 'models/gemini-...' if required, but usually just the name works
-        response = client.models.generate_content(
-            model=model_name,
+        # Use the client.generate_content method with the model config
+        response = client.generate_content(
+            model=model_config,  # Pass the configured model object
             contents=conversation_contents,
-            config=generate_content_config,
+            generation_config=generate_content_config,  # Pass generation config separately
         )
 
         if not response.candidates:
@@ -502,8 +522,15 @@ def generate_response(conversation_contents, model_name, force_json=False):
                 print(f"Prompt Feedback: {response.prompt_feedback}")
             return None
 
-        response_text = response.candidates[0].content.parts[0].text
-        return response_text
+        # Access response text correctly
+        if response.candidates[0].content and response.candidates[0].content.parts:
+            response_text = response.candidates[0].content.parts[0].text
+            return response_text
+        else:
+            print(
+                f"Warning: Model {model_name} returned a candidate with no content parts."
+            )
+            return None
 
     except Exception as e:
         print(f"Error during Gemini API call with model {model_name}: {e}")

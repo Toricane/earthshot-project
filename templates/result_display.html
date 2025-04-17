@@ -1,3 +1,5 @@
+<!-- START OF FILE result_display.html -->
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
     <head>
@@ -108,6 +110,46 @@
             .form-control:focus {
                 border-color: var(--primary-color);
                 box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            }
+
+            /* Chat Container Styles (for conversation history) */
+            .conversation-history-container {
+                max-height: 500px; /* Limit height */
+                overflow-y: auto;
+                border: 1px solid #dee2e6;
+                border-radius: var(--border-radius);
+                padding: 1rem;
+                background-color: white;
+                margin-top: 1rem; /* Space above */
+                scroll-behavior: smooth;
+            }
+
+            [data-bs-theme="dark"] .conversation-history-container {
+                background-color: #2b2b2b;
+                border-color: #444;
+            }
+
+            .message {
+                margin-bottom: 1rem;
+                padding: 0.75rem 1rem;
+                border-radius: var(--border-radius);
+                position: relative;
+                max-width: 80%;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                /* animation: fadeIn 0.3s ease-in-out; */ /* Optional: remove animation for static view */
+            }
+
+            .user-message {
+                background-color: var(--user-msg-bg);
+                text-align: right;
+                margin-left: auto;
+                border-bottom-right-radius: 0;
+            }
+
+            .assistant-message {
+                background-color: var(--assistant-msg-bg);
+                margin-right: auto;
+                border-bottom-left-radius: 0;
             }
 
             /* Roadmap Styles */
@@ -502,6 +544,9 @@
                     font-size: 0.9rem;
                     margin-bottom: 1.5rem;
                 }
+                .message {
+                    max-width: 90%; /* Adjust message width on mobile */
+                }
             }
         </style>
     </head>
@@ -528,6 +573,71 @@
                 </p>
             </div>
 
+            <!-- Setup Information Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Initial Setup</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Subject</dt>
+                        <dd class="col-sm-9">{{ subject }}</dd>
+
+                        <dt class="col-sm-3">Goal</dt>
+                        <dd class="col-sm-9">{{ goal }}</dd>
+
+                        {% if age %}
+                        <dt class="col-sm-3">Age</dt>
+                        <dd class="col-sm-9">{{ age }}</dd>
+                        {% endif %} {% if grade %}
+                        <dt class="col-sm-3">Grade</dt>
+                        <dd class="col-sm-9">{{ grade }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Conversation History Section (Collapsible) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3
+                        class="mb-0 d-flex justify-content-between align-items-center"
+                    >
+                        Diagnostic Conversation
+                        <button
+                            class="btn btn-sm btn-outline-light"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#conversationCollapse"
+                            aria-expanded="false"
+                            aria-controls="conversationCollapse"
+                        >
+                            Show/Hide <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </h3>
+                </div>
+                <div class="collapse" id="conversationCollapse">
+                    <div class="card-body">
+                        {% if conversation_history %}
+                        <div class="conversation-history-container">
+                            {% for message in conversation_history %}
+                            <div
+                                class="message {{ 'user-message' if message.role == 'user' else 'assistant-message' }}"
+                            >
+                                <!-- Use safe filter or ensure marked sanitizes -->
+                                {{ message.content | safe }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">
+                            Conversation history not available.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Result Section -->
             <div id="result-container">
                 <div class="card">
@@ -546,7 +656,7 @@
                             <button
                                 id="download-pdf"
                                 class="btn btn-outline-light"
-                                title="Download as PDF (mock)"
+                                title="Download as PDF (Print)"
                             >
                                 <i class="bi bi-download"></i>
                             </button>
@@ -651,10 +761,8 @@
                             <h4>Your Interests</h4>
                             <p
                                 id="interests-display"
-                                class="p-3 bg-light rounded border"
+                                class="p-3 rounded border"
                             ></p>
-                            [data-bs-theme="dark"] #interests-display {
-                            background-color: #3a3f44; border-color: #555; }
                         </div>
 
                         <div class="action-buttons">
@@ -687,11 +795,13 @@
             // Data is passed directly from Flask template
             const diagnosticResults = {{ diagnostic_result | tojson }};
             const sessionId = "{{ session_id }}"; // Get session ID from template
+            const conversationHistory = {{ conversation_history | tojson }}; // Get history
 
             // --- DOM Elements ---
             const themeToggle = document.getElementById('theme-toggle');
             const themeLabel = document.getElementById('theme-label');
             const alertContainer = document.getElementById('alert-container');
+            const conversationContainer = document.querySelector('.conversation-history-container'); // Get conversation container
 
             // --- Initialization ---
             document.addEventListener('DOMContentLoaded', () => {
@@ -706,11 +816,16 @@
                     themeLabel.textContent = 'Dark Mode';
                 }
 
+                // Render conversation history using marked.js
+                renderConversationHistory();
+
                 // Display results passed from Flask
                 if (diagnosticResults) {
                     displayResults(diagnosticResults);
                 } else {
                     showAlert('Error: Diagnostic results data not found.', 'danger');
+                    // Hide the results card if data is missing
+                    document.getElementById('result-container').style.display = 'none';
                 }
             });
 
@@ -734,7 +849,28 @@
                         createRoadmapDiagram(diagnosticResults.learning_roadmap);
                      }
                 }
+                // Re-render conversation history for theme change
+                renderConversationHistory();
             });
+
+            // --- Render Conversation History ---
+            function renderConversationHistory() {
+                if (!conversationContainer) return; // Exit if container not found
+                conversationContainer.innerHTML = ''; // Clear existing content
+
+                if (conversationHistory && conversationHistory.length > 0) {
+                    conversationHistory.forEach(message => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`;
+                        // Use marked.parse() - ensure it's configured to sanitize if needed, or trust the source
+                        messageDiv.innerHTML = marked.parse(message.content || '*No content*');
+                        conversationContainer.appendChild(messageDiv);
+                    });
+                } else {
+                    conversationContainer.innerHTML = '<p class="text-muted p-3">Conversation history not available.</p>';
+                }
+            }
+
 
             // --- Result Display Logic (Adapted from index.html) ---
             function displayResults(results) {
@@ -1180,15 +1316,27 @@
             document.getElementById('download-roadmap').addEventListener('click', function() {
                 if (!diagnosticResults) { showAlert('No results available to download.', 'warning'); return; }
                 try {
-                    const filename = `learning_navigator_results_${sessionId}.json`;
-                    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(diagnosticResults, null, 2));
+                    // Include setup and history in the download
+                    const fullData = {
+                        sessionId: sessionId,
+                        setup: {
+                            subject: "{{ subject }}",
+                            goal: "{{ goal }}",
+                            age: "{{ age }}",
+                            grade: "{{ grade }}"
+                        },
+                        conversationHistory: conversationHistory,
+                        diagnosticResult: diagnosticResults
+                    };
+                    const filename = `learning_navigator_full_session_${sessionId}.json`;
+                    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(fullData, null, 2));
                     const downloadAnchorNode = document.createElement('a');
                     downloadAnchorNode.setAttribute('href', dataStr);
                     downloadAnchorNode.setAttribute('download', filename);
                     document.body.appendChild(downloadAnchorNode);
                     downloadAnchorNode.click();
                     downloadAnchorNode.remove();
-                    showAlert('Results JSON downloaded successfully!', 'success');
+                    showAlert('Full session data (JSON) downloaded successfully!', 'success');
                 } catch (error) {
                     console.error('Error creating download link:', error);
                     showAlert('Failed to prepare download.', 'danger');
@@ -1220,6 +1368,8 @@
             });
 
             document.getElementById('download-pdf').addEventListener('click', function() {
+                // Changed to just trigger print, as PDF generation is complex client-side
+                showAlert('Use your browser\'s Print to PDF function to save as PDF.', 'info', 4000);
                 window.print();
             });
 
