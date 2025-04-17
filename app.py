@@ -492,28 +492,22 @@ def generate_response(conversation_contents, model_name, force_json=False):
     else:
         gen_config_params["response_mime_type"] = "text/plain"
 
-    # Construct GenerateContentConfig using the dictionary
     generate_content_config = types.GenerateContentConfig(
-        **gen_config_params
-        # system_instruction is now part of the model config, not GenerateContentConfig
-        # safety_settings=... # Add safety settings if needed
-    )
-
-    # Prepare model configuration including system instruction
-    model_config = types.Model(
-        name=f"models/{model_name}",  # Ensure model name is prefixed correctly
+        **gen_config_params,
         system_instruction=[
             types.Part.from_text(text=SYSTEM_INSTRUCTIONS),
         ],
-        # Add other model parameters if needed
+        # safety_settings=... # Add safety settings if needed
     )
 
     try:
-        # Use the client.generate_content method with the model config
-        response = client.generate_content(
-            model=model_config,  # Pass the configured model object
+        # Use the client.generate_content method
+        # Ensure model name is prefixed correctly if needed by the library version
+        # Example: 'models/gemini-...' if required, but usually just the name works
+        response = client.models.generate_content(
+            model=model_name,
             contents=conversation_contents,
-            generation_config=generate_content_config,  # Pass generation config separately
+            config=generate_content_config,
         )
 
         if not response.candidates:
@@ -522,15 +516,8 @@ def generate_response(conversation_contents, model_name, force_json=False):
                 print(f"Prompt Feedback: {response.prompt_feedback}")
             return None
 
-        # Access response text correctly
-        if response.candidates[0].content and response.candidates[0].content.parts:
-            response_text = response.candidates[0].content.parts[0].text
-            return response_text
-        else:
-            print(
-                f"Warning: Model {model_name} returned a candidate with no content parts."
-            )
-            return None
+        response_text = response.candidates[0].content.parts[0].text
+        return response_text
 
     except Exception as e:
         print(f"Error during Gemini API call with model {model_name}: {e}")
