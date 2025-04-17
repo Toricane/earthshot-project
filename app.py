@@ -10,11 +10,27 @@ from google.genai import types
 load_dotenv()
 
 app = Flask(__name__)
+# Use Flask's session mechanism for storing session_id server-side if needed,
+# but the primary session management here relies on client sending session_id
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
 # Initialize Gemini client
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-# model = "gemini-2.5-pro-exp-03-25"
+# Ensure API key is set in your .env file or environment variables
+api_key = os.environ.get("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found in environment variables.")
+
+# Use specific client initialization if needed, otherwise default works
+# client = genai.Client(api_key=api_key) # Default client creation
+# Forcing specific transport if needed (usually not required)
+# genai.configure(transport='rest', api_key=api_key)
+# client = genai.GenerativeModel(...) # This is for the newer API style, stick to Client for now
+
+# Using the Client API as originally intended
+client = genai.Client(api_key=api_key)
+
+# Model names as defined
+# model = "gemini-2.5-pro-exp-03-25" # Keep commented if flash is preferred for speed
 model = "gemini-2.0-flash-thinking-exp-01-21"
 final_model = "gemini-2.5-pro-exp-03-25"
 
@@ -69,28 +85,39 @@ class DiagnosticSession:
         self.grade = grade
         self.conversation_history = []
         self.diagnostic_result = None
+        # Store initial user info for context
+        self.initial_user_info = {
+            "subject": subject,
+            "goal": goal,
+            "age": age,
+            "grade": grade,
+        }
 
     def add_message(self, role, content):
         self.conversation_history.append({"role": role, "content": content})
 
     def get_conversation_contents(self):
         contents = []
+        # Prepend initial context if needed, or rely on first user message
         for msg in self.conversation_history:
+            # Map roles correctly for the API
+            api_role = "user" if msg["role"] == "user" else "model"
             contents.append(
                 types.Content(
-                    role="user" if msg["role"] == "user" else "model",
+                    role=api_role,
                     parts=[types.Part.from_text(text=msg["content"])],
                 )
             )
         return contents
 
 
-# Store active diagnostic sessions
+# Store active diagnostic sessions in memory (consider a database for persistence)
 diagnostic_sessions = {}
 
 
 @app.route("/")
 def index():
+    # Render the main HTML page
     return render_template("index.html")
 
 
@@ -102,28 +129,34 @@ def start_diagnostic():
     age = data.get("age")
     grade = data.get("grade")
 
-    # Create a new diagnostic session
-    session = DiagnosticSession(subject, goal, age, grade)
-    diagnostic_sessions[session.session_id] = session
+    if not subject or not goal:
+        return jsonify({"error": "Subject and Goal are required"}), 400
 
-    # Format the initial message
-    initial_prompt = f"""
-    I'm a student who wants to learn {subject}. My goal is {goal}.
-    """
+    # Create a new diagnostic session
+    diag_session = DiagnosticSession(subject, goal, age, grade)
+    diagnostic_sessions[diag_session.session_id] = diag_session
+
+    # Format the initial message from the user perspective
+    initial_prompt = f"I want to learn about {subject}. My main goal is to {goal}."
     if age:
         initial_prompt += f" I'm {age} years old."
     if grade:
         initial_prompt += f" I'm in grade {grade}."
+    initial_prompt += " Can you help me figure out what I know and what I need to learn next? Let's start with some questions."
 
-    initial_prompt += " Could you help me figure out what I need to learn?"
+    # Add the user's initial statement to the history
+    diag_session.add_message("user", initial_prompt)
 
-    # Add the initial message to the conversation history
-    session.add_message("user", initial_prompt)
+    # Generate the assistant's first response using the faster model
+    response_text = generate_response(diag_session, model_name=model)
 
-    # Generate the assistant's first response
-    response = generate_response(session)
+    if response_text is None:
+        return jsonify(
+            {"error": "Failed to generate initial response from AI model"}
+        ), 500
 
-    return jsonify({"session_id": session.session_id, "message": response})
+    # Return session ID and the first message from the assistant
+    return jsonify({"session_id": diag_session.session_id, "message": response_text})
 
 
 @app.route("/api/continue-diagnostic", methods=["POST"])
@@ -132,19 +165,31 @@ def continue_diagnostic():
     session_id = data.get("session_id")
     message = data.get("message")
 
+    if not session_id or not message:
+        return jsonify({"error": "Session ID and message are required"}), 400
+
     if session_id not in diagnostic_sessions:
         return jsonify({"error": "Session not found"}), 404
 
-    session = diagnostic_sessions[session_id]
-    session.add_message("user", message)
+    diag_session = diagnostic_sessions[session_id]
 
-    response = generate_response(session)
+    # Add user's message to history
+    diag_session.add_message("user", message)
+
+    # Generate the assistant's response using the faster model
+    response_text = generate_response(diag_session, model_name=model)
+
+    if response_text is None:
+        return jsonify({"error": "Failed to generate response from AI model"}), 500
+
+    # Check if the session is considered complete (though completion is usually triggered explicitly)
+    is_complete = diag_session.diagnostic_result is not None
 
     return jsonify(
         {
-            "message": response,
-            "is_complete": session.diagnostic_result is not None,
-            "diagnostic_result": session.diagnostic_result,
+            "message": response_text,
+            "is_complete": is_complete,  # This might always be false here
+            "diagnostic_result": diag_session.diagnostic_result,  # Usually null until /complete
         }
     )
 
@@ -154,116 +199,183 @@ def complete_diagnostic():
     data = request.json
     session_id = data.get("session_id")
 
+    if not session_id:
+        return jsonify({"error": "Session ID is required"}), 400
+
     if session_id not in diagnostic_sessions:
         return jsonify({"error": "Session not found"}), 404
 
-    session = diagnostic_sessions[session_id]
+    diag_session = diagnostic_sessions[session_id]
 
-    # Generate the final diagnostic result using Gemini
+    # Prevent re-completion if results already exist
+    if diag_session.diagnostic_result:
+        print(f"Diagnostic for session {session_id} already completed.")
+        return jsonify({"diagnostic_result": diag_session.diagnostic_result})
+
+    # Add a final instruction to the conversation history for the powerful model
     completion_prompt = """
-    Based on our conversation, please provide a complete diagnostic assessment with knowledge mapping.
-    Format the response as a JSON object with the following structure:
-    
-    The output must be structured as a JSON object with the following format:
+    Based on our entire conversation, please provide a comprehensive diagnostic assessment and personalized learning roadmap.
+    Structure the output STRICTLY as a JSON object adhering to the following schema. Do NOT include any text outside the JSON object (like '```json' or explanations).
+
     {
         "diagnostic_summary": {
-            "strengths": ["list of identified strengths"],
-            "gaps": ["list of identified knowledge gaps, including foundational 'unknown unknowns'"]
+            "strengths": ["List identified strengths concisely based on the conversation."],
+            "gaps": ["List identified knowledge gaps, including potential foundational 'unknown unknowns', based on the conversation."]
         },
         "knowledge_graph": {
             "nodes": [
                 {
-                    "id": "unique_id",
-                    "name": "Concept Name",
-                    "description": "Brief description of this knowledge area",
-                    "proficiency": "high/medium/low"
+                    "id": "concept_unique_id_1",
+                    "name": "Concept Name 1",
+                    "description": "Brief description of this concept/skill.",
+                    "proficiency": "high | medium | low"
                 }
             ],
             "links": [
                 {
                     "source": "source_node_id",
                     "target": "target_node_id",
-                    "relationship": "builds_on/relates_to/applies_to"
+                    "relationship": "builds_on | relates_to | applies_to"
                 }
             ]
         },
         "learning_roadmap": [
             {
-                "id": "unique_id",
-                "concept": "Name of concept",
-                "description": "Brief description",
-                "prerequisites": ["prerequisite concepts"],
-                "resources": ["suggested resource types"],
-                "stage": "beginner/intermediate/advanced"
+                "id": "roadmap_unique_id_1",
+                "concept": "Name of concept/skill to learn",
+                "description": "Brief description of what this involves.",
+                "prerequisites": ["List prerequisite concept names from this roadmap or knowledge graph"],
+                "resources": ["Suggest general resource types, e.g., 'Interactive exercises', 'Video tutorials', 'Practice problems'"],
+                "stage": "beginner | intermediate | advanced"
             }
         ],
-        "user_interests": ["list of user's stated interests"],
-        "recommendations": ["specific recommendations based on the assessment"]
+        "user_interests": ["List specific interests mentioned by the user during the conversation."],
+        "recommendations": ["Provide 2-3 specific, actionable recommendations based on the assessment and goals."]
     }
 
-    Ensure that the knowledge_graph represents concepts the user already knows, with connections showing how these concepts relate to each other.
-    The learning_roadmap should be structured to show a clear progression path from beginner to advanced concepts.
+    Ensure the knowledge_graph reflects the user's assessed knowledge state *before* starting the roadmap.
+    The learning_roadmap should present a logical progression towards the user's goal, starting from their current gaps.
+    Assign unique, simple string IDs (e.g., "alg_basics", "py_vars") for nodes and roadmap items.
+    Map prerequisites in the roadmap using the 'concept' names.
     """
 
-    session.add_message("user", completion_prompt)
-    contents = session.get_conversation_contents()
+    diag_session.add_message("user", completion_prompt)
+
+    # Generate the final result using the more powerful model
+    response_text = generate_response(
+        diag_session, model_name=final_model, force_json=True
+    )
+
+    # Remove the last user message (the prompt) from history after getting the response
+    diag_session.conversation_history.pop()
+
+    if response_text is None:
+        return jsonify(
+            {"error": "Failed to generate final diagnostic result from AI model"}
+        ), 500
+
+    try:
+        # Attempt to parse the JSON response directly
+        diagnostic_result = json.loads(response_text)
+        diag_session.diagnostic_result = diagnostic_result  # Store the result
+        print(f"Diagnostic result generated for session {session_id}")
+        return jsonify({"diagnostic_result": diagnostic_result})
+
+    except json.JSONDecodeError as e:
+        print(f"JSONDecodeError: {e}")
+        print(
+            f"Raw response from model for session {session_id}:\n---\n{response_text}\n---"
+        )
+        # Try to extract JSON if wrapped in markdown
+        try:
+            if "```json" in response_text:
+                extracted_json = (
+                    response_text.split("```json")[1].split("```")[0].strip()
+                )
+            elif "```" in response_text:
+                extracted_json = response_text.split("```")[1].split("```")[0].strip()
+            else:
+                # Assume the whole text might be JSON, maybe with leading/trailing issues
+                extracted_json = response_text.strip()
+
+            diagnostic_result = json.loads(extracted_json)
+            diag_session.diagnostic_result = diagnostic_result  # Store the result
+            print(f"Diagnostic result extracted and parsed for session {session_id}")
+            return jsonify({"diagnostic_result": diagnostic_result})
+        except (IndexError, json.JSONDecodeError) as inner_e:
+            print(
+                f"Failed to extract/parse JSON even after attempting cleanup: {inner_e}"
+            )
+            return jsonify(
+                {
+                    "error": "Failed to parse diagnostic result from model response.",
+                    "raw_response": response_text,  # Send raw response for debugging
+                }
+            ), 500
+
+
+def generate_response(diag_session, model_name, force_json=False):
+    """Generates a response from the specified Gemini model."""
+    contents = diag_session.get_conversation_contents()
+
+    # Configure generation parameters
+    # gen_config_params = {
+    #     "temperature": 0.7,  # Adjust for creativity vs consistency
+    #     "top_p": 0.95,
+    #     "top_k": 40,
+    #     # "max_output_tokens": 2048, # Set if needed
+    # }
+    gen_config_params = {}
+    if force_json:
+        gen_config_params["response_mime_type"] = "application/json"
+    else:
+        gen_config_params["response_mime_type"] = "text/plain"
 
     generate_content_config = types.GenerateContentConfig(
-        response_mime_type="text/plain",
+        **gen_config_params,
         system_instruction=[
             types.Part.from_text(text=SYSTEM_INSTRUCTIONS),
         ],
-    )
-
-    response = client.models.generate_content(
-        model=final_model,
-        contents=contents,
-        config=generate_content_config,
+        # safety_settings=... # Add safety settings if needed
     )
 
     try:
-        # Parse the JSON response
-        result_text = response.text
-        # Extract JSON if it's wrapped in markdown code blocks
-        if "```json" in result_text:
-            result_text = result_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in result_text:
-            result_text = result_text.split("```")[1].split("```")[0].strip()
+        # Use the client.generate_content method which is standard
+        response = client.models.generate_content(
+            model=model_name,  # Ensure model name is prefixed correctly
+            contents=contents,
+            config=generate_content_config,
+            # stream=False # Ensure non-streaming for single response
+        )
 
-        diagnostic_result = json.loads(result_text)
-        session.diagnostic_result = diagnostic_result
+        # Handle potential lack of response or errors
+        if not response.candidates:
+            print(f"Warning: Model {model_name} returned no candidates.")
+            # Check for prompt feedback if available
+            if response.prompt_feedback:
+                print(f"Prompt Feedback: {response.prompt_feedback}")
+            return None  # Indicate failure
 
-        return jsonify({"diagnostic_result": diagnostic_result})
-    except json.JSONDecodeError:
-        return jsonify(
-            {
-                "error": "Failed to parse diagnostic result",
-                "raw_response": response.text,
-            }
-        ), 500
+        # Assuming the first candidate is the one we want
+        response_text = response.candidates[0].content.parts[0].text
 
+        # Add assistant's response to history *only if* it's not the final JSON result
+        # The final JSON result isn't part of the ongoing conversation flow.
+        if not force_json:
+            diag_session.add_message("assistant", response_text)
 
-def generate_response(session):
-    contents = session.get_conversation_contents()
+        return response_text
 
-    generate_content_config = types.GenerateContentConfig(
-        response_mime_type="text/plain",
-        system_instruction=[
-            types.Part.from_text(text=SYSTEM_INSTRUCTIONS),
-        ],
-    )
-
-    response = client.models.generate_content(
-        model=model,
-        contents=contents,
-        config=generate_content_config,
-    )
-
-    response_text = response.text
-    session.add_message("assistant", response_text)
-
-    return response_text
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error during Gemini API call with model {model_name}: {e}")
+        # Consider more specific error handling based on google.api_core.exceptions
+        if hasattr(e, "message"):
+            print(f"API Error Message: {e.message}")
+        return None  # Indicate failure
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    # Use host='0.0.0.0' to make it accessible on the network
+    # debug=True enables auto-reloading and detailed error pages (disable in production)
+    app.run(host="0.0.0.0", port=5000, debug=False)

@@ -124,6 +124,7 @@
 
             [data-bs-theme="dark"] #chat-container {
                 background-color: #2b2b2b;
+                border-color: #444;
             }
 
             .message {
@@ -179,6 +180,9 @@
                 margin: 0 2px;
                 animation: typing 1.4s ease-in-out infinite;
             }
+            [data-bs-theme="dark"] .typing-indicator span {
+                background-color: #bbb;
+            }
 
             .typing-indicator span:nth-child(2) {
                 animation-delay: 0.2s;
@@ -218,6 +222,9 @@
                 background-color: #dee2e6;
                 z-index: 1;
             }
+            [data-bs-theme="dark"] .progress-indicator::before {
+                background-color: #444;
+            }
 
             .progress-step {
                 position: relative;
@@ -226,6 +233,10 @@
                 flex-direction: column;
                 align-items: center;
                 width: 33.33%;
+                cursor: default; /* Default cursor */
+            }
+            .progress-step.clickable {
+                cursor: pointer; /* Pointer cursor when clickable */
             }
 
             .step-icon {
@@ -239,6 +250,12 @@
                 justify-content: center;
                 font-size: 12px;
                 margin-bottom: 0.5rem;
+                transition: background-color 0.3s, border-color 0.3s;
+            }
+            [data-bs-theme="dark"] .step-icon {
+                background-color: #333;
+                border-color: #555;
+                color: #ccc;
             }
 
             .step-active .step-icon {
@@ -246,10 +263,16 @@
                 border-color: var(--primary-color);
                 color: white;
             }
+            [data-bs-theme="dark"] .step-active .step-icon {
+                color: white;
+            }
 
             .step-complete .step-icon {
                 background-color: #198754;
                 border-color: #198754;
+                color: white;
+            }
+            [data-bs-theme="dark"] .step-complete .step-icon {
                 color: white;
             }
 
@@ -271,26 +294,38 @@
                 position: relative;
                 transition: all var(--transition-speed);
             }
+            [data-bs-theme="dark"] .roadmap-item {
+                border-left-color: var(--primary-hover);
+            }
 
             .roadmap-item:hover {
                 background-color: rgba(67, 97, 238, 0.05);
                 transform: translateX(5px);
+            }
+            [data-bs-theme="dark"] .roadmap-item:hover {
+                background-color: rgba(67, 97, 238, 0.15);
             }
 
             .roadmap-item::before {
                 content: "";
                 position: absolute;
                 left: -10px;
-                top: 0;
+                top: 15px; /* Adjusted for better alignment */
                 width: 16px;
                 height: 16px;
                 border-radius: 50%;
                 background-color: var(--primary-color);
             }
+            [data-bs-theme="dark"] .roadmap-item::before {
+                background-color: var(--primary-hover);
+            }
 
             .roadmap-item h5 {
                 color: var(--primary-color);
                 margin-bottom: 0.5rem;
+            }
+            [data-bs-theme="dark"] .roadmap-item h5 {
+                color: var(--accent-color);
             }
 
             /* Results page */
@@ -304,11 +339,22 @@
                 padding-bottom: 0.5rem;
                 display: inline-block;
             }
+            [data-bs-theme="dark"] .result-section h4 {
+                border-bottom-color: var(--primary-hover);
+            }
 
             .list-group-item {
                 border-left: 3px solid var(--primary-color);
                 margin-bottom: 0.5rem;
                 border-radius: var(--border-radius);
+                background-color: var(
+                    --bs-list-group-bg
+                ); /* Use Bootstrap variable */
+            }
+            [data-bs-theme="dark"] .list-group-item {
+                border-left-color: var(--primary-hover);
+                background-color: #3a3f44; /* Darker list item */
+                color: var(--dark-text);
             }
 
             /* Toggle Switch */
@@ -318,6 +364,7 @@
                 right: 1rem;
                 display: flex;
                 align-items: center;
+                z-index: 1050; /* Ensure it's above other elements */
             }
 
             .theme-switch {
@@ -365,12 +412,12 @@
 
             .action-buttons {
                 display: flex;
+                flex-wrap: wrap; /* Allow wrapping on smaller screens */
                 gap: 0.5rem;
                 margin-top: 1.5rem;
             }
 
             /* Skills Tree View */
-            /* Replace the existing Skills Tree View CSS */
             .tree-view-toggle {
                 margin-bottom: 1rem;
             }
@@ -390,34 +437,49 @@
             }
 
             .node circle {
-                fill: var(--primary-color);
+                /* fill: var(--primary-color); */ /* Color based on proficiency now */
                 stroke: #fff;
                 stroke-width: 2px;
+                filter: drop-shadow(
+                    0px 1px 2px rgba(0, 0, 0, 0.2)
+                ); /* Added shadow */
+            }
+            [data-bs-theme="dark"] .node circle {
+                stroke: #555;
             }
 
             .node text {
                 font-size: 12px;
                 font-family: sans-serif;
+                fill: var(--dark-text); /* Use theme text color */
+            }
+            [data-bs-theme="dark"] .node text {
+                fill: var(--light-text);
             }
 
             .link {
                 fill: none;
                 stroke: #ccc;
-                stroke-width: 2px;
+                stroke-width: 1.5px; /* Adjusted from 2px */
+                transition: stroke 0.2s;
+            }
+            [data-bs-theme="dark"] .link {
+                stroke: #555;
             }
 
             .node-tooltip {
                 position: absolute;
-                background-color: rgba(0, 0, 0, 0.7);
+                background-color: rgba(0, 0, 0, 0.8); /* Darker tooltip */
                 color: white;
-                padding: 5px 10px;
+                padding: 8px 12px; /* Increased padding */
                 border-radius: 4px;
                 font-size: 12px;
                 pointer-events: none;
                 opacity: 0;
                 transition: opacity 0.3s;
-                max-width: 200px;
+                max-width: 250px; /* Increased max width */
                 z-index: 100;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Added shadow */
             }
 
             /* Knowledge Graph Styles */
@@ -428,10 +490,12 @@
                 position: relative;
                 overflow: hidden;
                 margin-bottom: 2rem;
+                border: 1px solid #dee2e6; /* Added subtle border */
             }
 
             [data-bs-theme="dark"] .knowledge-graph {
                 background-color: #2b2b2b;
+                border-color: #444;
             }
 
             .knowledge-node {
@@ -440,7 +504,7 @@
             }
 
             .knowledge-node:hover {
-                transform: scale(1.1);
+                transform: scale(1.1); /* Handled by JS now */
             }
 
             .knowledge-list {
@@ -450,11 +514,9 @@
             .node-proficiency-high {
                 fill: #198754;
             }
-
             .node-proficiency-medium {
-                fill: #fd7e14;
-            }
-
+                fill: #ffc107;
+            } /* Changed to warning yellow */
             .node-proficiency-low {
                 fill: #6c757d;
             }
@@ -462,16 +524,19 @@
             /* Roadmap Diagram Styles */
             .roadmap-diagram {
                 display: none;
-                height: 600px;
+                min-height: 400px; /* Ensure minimum height */
+                height: auto; /* Allow height to grow */
                 background-color: #f8f9fa;
                 border-radius: var(--border-radius);
                 position: relative;
-                overflow: auto;
+                overflow: auto; /* Changed to auto for scrolling if needed */
                 padding: 2rem;
+                border: 1px solid #dee2e6; /* Added subtle border */
             }
 
             [data-bs-theme="dark"] .roadmap-diagram {
                 background-color: #2b2b2b;
+                border-color: #444;
             }
 
             .roadmap-stage {
@@ -481,17 +546,24 @@
 
             .roadmap-stage-title {
                 font-weight: 600;
-                margin-bottom: 1rem;
+                margin-bottom: 1.5rem; /* Increased spacing */
                 color: var(--primary-color);
                 border-bottom: 2px solid var(--primary-color);
                 display: inline-block;
                 padding-bottom: 0.25rem;
             }
+            [data-bs-theme="dark"] .roadmap-stage-title {
+                color: var(--accent-color);
+                border-bottom-color: var(--accent-color);
+            }
 
             .roadmap-stage-items {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 1.5rem;
+                gap: 2rem; /* Increased gap */
+                margin-bottom: 1.5rem; /* Added bottom margin */
+                position: relative; /* Needed for absolute positioning of arrows */
+                z-index: 2; /* Ensure nodes are above arrows */
             }
 
             .roadmap-node {
@@ -499,14 +571,17 @@
                 padding: 1rem;
                 border-radius: var(--border-radius);
                 background-color: white;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Softer shadow */
                 position: relative;
                 transition: all 0.3s;
+                z-index: 2; /* Ensure nodes are above arrows */
+                border: 1px solid #eee; /* Subtle border */
             }
 
             [data-bs-theme="dark"] .roadmap-node {
                 background-color: #424242;
                 color: #e0e0e0;
+                border-color: #555;
             }
 
             .roadmap-node:hover {
@@ -519,88 +594,70 @@
                 margin-bottom: 0.5rem;
                 color: var(--primary-color);
             }
+            [data-bs-theme="dark"] .roadmap-node h5 {
+                color: var(--accent-color);
+            }
 
             .roadmap-node-description {
                 font-size: 0.875rem;
                 margin-bottom: 0.5rem;
+                color: #555; /* Slightly darker text */
+            }
+            [data-bs-theme="dark"] .roadmap-node-description {
+                color: #ccc;
             }
 
             .roadmap-node-prereq {
                 font-size: 0.75rem;
                 color: #6c757d;
-                margin-top: 0.5rem;
+                margin-top: 0.75rem; /* Increased spacing */
+                border-top: 1px dashed #eee; /* Separator */
+                padding-top: 0.5rem;
+            }
+            [data-bs-theme="dark"] .roadmap-node-prereq {
+                color: #aaa;
+                border-top-color: #555;
             }
 
-            .roadmap-arrows svg {
+            .roadmap-arrows {
                 position: absolute;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
                 pointer-events: none;
-                z-index: 1;
+                z-index: 1; /* Below nodes */
+                overflow: visible; /* Ensure arrows aren't clipped */
             }
 
             .roadmap-arrow {
                 fill: none;
                 stroke: #adb5bd;
-                stroke-width: 1.5px;
-                marker-end: url(#arrowhead);
-            }
-
-            /* Add to the style section */
-            .link {
-                fill: none;
-                stroke: #aaa;
-                stroke-width: 1.5px;
-                transition: stroke 0.2s;
-            }
-
-            .node-tooltip {
-                position: absolute;
-                background-color: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 8px 12px;
-                border-radius: 4px;
-                font-size: 12px;
-                pointer-events: none;
-                opacity: 0;
-                transition: opacity 0.3s;
-                max-width: 250px;
-                z-index: 100;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            }
-
-            .roadmap-arrow {
-                fill: none;
-                stroke: #adb5bd;
-                stroke-width: 2px;
+                stroke-width: 1.5px; /* Thinner arrow */
                 stroke-opacity: 0.7;
                 marker-end: url(#arrowhead);
                 transition: stroke-opacity 0.2s;
+            }
+            [data-bs-theme="dark"] .roadmap-arrow {
+                stroke: #666;
             }
 
             .roadmap-arrow:hover {
                 stroke-opacity: 1;
             }
 
-            /* Improve roadmap diagram spacing */
-            .roadmap-stage-items {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 2rem;
-                margin-bottom: 1.5rem;
+            /* Alert styling */
+            .alert-container {
+                position: fixed;
+                top: 70px; /* Below header */
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1055; /* Above most elements */
+                width: auto;
+                max-width: 90%;
             }
-
-            .roadmap-node {
-                width: 220px;
-                padding: 1rem;
-                border-radius: var(--border-radius);
-                background-color: white;
+            .alert {
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                position: relative;
-                transition: all 0.3s;
-                z-index: 2; /* Ensure nodes are above arrows */
             }
 
             /* Mobile improvements */
@@ -612,11 +669,42 @@
 
                 .action-buttons {
                     flex-direction: column;
+                    align-items: stretch; /* Make buttons full width */
+                }
+                .action-buttons .btn {
+                    width: 100%; /* Full width buttons on mobile */
                 }
 
                 .roadmap-item {
                     padding-left: 1rem;
                     padding-right: 1rem;
+                }
+                .roadmap-stage-items {
+                    flex-direction: column; /* Stack nodes vertically */
+                    align-items: center; /* Center nodes */
+                }
+                .roadmap-node {
+                    width: 90%; /* Wider nodes on mobile */
+                }
+                .progress-indicator {
+                    margin-bottom: 1.5rem;
+                }
+                .step-label {
+                    font-size: 0.75rem; /* Smaller labels */
+                }
+                .theme-switch-wrapper {
+                    top: 0.5rem;
+                    right: 0.5rem;
+                }
+                body {
+                    padding-top: 1rem;
+                }
+                .app-title {
+                    font-size: 1.75rem;
+                }
+                .app-subtitle {
+                    font-size: 0.9rem;
+                    margin-bottom: 1.5rem;
                 }
             }
         </style>
@@ -630,6 +718,9 @@
             <span class="ms-2" id="theme-label">Dark Mode</span>
         </div>
 
+        <!-- Alert Container -->
+        <div id="alert-container" class="alert-container"></div>
+
         <div class="container app-container">
             <div class="app-header">
                 <h1 class="app-title">Learning Navigator</h1>
@@ -639,21 +730,30 @@
             </div>
 
             <div class="progress-indicator">
-                <div class="progress-step step-active" id="step-setup">
+                <div class="progress-step" id="step-setup" data-step="setup">
                     <div class="step-icon">1</div>
                     <div class="step-label">Setup</div>
                 </div>
-                <div class="progress-step" id="step-diagnostic">
+                <div
+                    class="progress-step"
+                    id="step-diagnostic"
+                    data-step="diagnostic"
+                >
                     <div class="step-icon">2</div>
                     <div class="step-label">Diagnostic</div>
                 </div>
-                <div class="progress-step" id="step-results">
+                <div
+                    class="progress-step"
+                    id="step-results"
+                    data-step="results"
+                >
                     <div class="step-icon">3</div>
                     <div class="step-label">Results</div>
                 </div>
             </div>
 
-            <div id="setup-form">
+            <!-- Setup Section -->
+            <div id="setup-form" style="display: none">
                 <div class="card">
                     <div
                         class="card-header d-flex justify-content-between align-items-center"
@@ -712,6 +812,7 @@
                 </div>
             </div>
 
+            <!-- Chat Section -->
             <div id="chat-section" style="display: none">
                 <div class="card">
                     <div
@@ -722,12 +823,14 @@
                             <button
                                 id="restart-diagnostic"
                                 class="btn btn-outline-light me-2"
+                                title="Restart Assessment"
                             >
                                 <i class="bi bi-arrow-counterclockwise"></i>
                             </button>
                             <button
                                 id="complete-diagnostic"
                                 class="btn btn-light text-primary"
+                                title="Finish and View Results"
                             >
                                 <i class="bi bi-check-circle-fill"></i> Complete
                                 Assessment
@@ -747,7 +850,7 @@
                             <span></span>
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group mt-3">
                             <input
                                 type="text"
                                 id="user-input"
@@ -755,13 +858,14 @@
                                 placeholder="Type your answer..."
                             />
                             <button id="send-message" class="btn btn-primary">
-                                <i class="bi bi-send-fill"></i>
+                                <i class="bi bi-send-fill"></i> Send
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Result Section -->
             <div id="result-container" style="display: none">
                 <div class="card">
                     <div
@@ -772,12 +876,14 @@
                             <button
                                 id="download-pdf"
                                 class="btn btn-outline-light"
+                                title="Download as PDF (mock)"
                             >
                                 <i class="bi bi-download"></i>
                             </button>
                             <button
                                 id="share-results"
                                 class="btn btn-outline-light"
+                                title="Share Results (mock)"
                             >
                                 <i class="bi bi-share"></i>
                             </button>
@@ -786,8 +892,8 @@
                     <div class="card-body">
                         <div class="alert alert-success">
                             <i class="bi bi-check-circle-fill"></i> Your
-                            assessment is complete! Below is your personalized
-                            learning roadmap.
+                            assessment is complete! Explore your personalized
+                            results below.
                         </div>
 
                         <div class="result-section">
@@ -822,7 +928,8 @@
                         </div>
 
                         <div class="row result-section">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <!-- Added margin bottom for mobile -->
                                 <h4>Your Strengths</h4>
                                 <ul id="strengths-list" class="list-group"></ul>
                             </div>
@@ -856,12 +963,26 @@
 
                             <div
                                 id="roadmap-container"
-                                class="roadmap-container"
-                            ></div>
+                                class="roadmap-container mt-3"
+                                <!--
+                                Added
+                                margin
+                                top
+                                --
+                            >
+                                >
+                            </div>
                             <div
                                 id="roadmap-diagram"
-                                class="roadmap-diagram"
-                            ></div>
+                                class="roadmap-diagram mt-3"
+                                <!--
+                                Added
+                                margin
+                                top
+                                --
+                            >
+                                >
+                            </div>
                         </div>
 
                         <div class="result-section">
@@ -876,8 +997,10 @@
                             <h4>Your Interests</h4>
                             <p
                                 id="interests-display"
-                                class="p-3 bg-light rounded"
+                                class="p-3 bg-light rounded border"
                             ></p>
+                            [data-bs-theme="dark"] #interests-display {
+                            background-color: #3a3f44; border-color: #555; }
                         </div>
 
                         <div class="action-buttons">
@@ -885,19 +1008,21 @@
                                 id="download-roadmap"
                                 class="btn btn-primary"
                             >
-                                <i class="bi bi-download"></i> Download Roadmap
+                                <i class="bi bi-download"></i> Download Results
+                                (JSON)
                             </button>
                             <button
                                 id="print-roadmap"
                                 class="btn btn-outline-primary"
                             >
-                                <i class="bi bi-printer"></i> Print
+                                <i class="bi bi-printer"></i> Print Page
                             </button>
                             <button
                                 id="new-assessment"
                                 class="btn btn-outline-secondary"
                             >
-                                <i class="bi bi-plus-circle"></i> New Assessment
+                                <i class="bi bi-plus-circle"></i> Start New
+                                Assessment
                             </button>
                         </div>
                     </div>
@@ -907,15 +1032,45 @@
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script>
+            // --- Global State Variables ---
             let sessionId = null;
             let diagnosticResults = null;
+            let setupData = { subject: "", goal: "", age: "", grade: "" };
+            let chatHistory = []; // Stores { role: 'user'/'assistant', content: '...' }
+            let isDiagnosticComplete = false;
+            let currentStage = "setup"; // 'setup', 'diagnostic', 'results'
 
-            // Theme switcher
+            // --- DOM Elements ---
+            const setupForm = document.getElementById("setup-form");
+            const chatSection = document.getElementById("chat-section");
+            const resultContainer = document.getElementById("result-container");
+            const chatContainer = document.getElementById("chat-container");
+            const userInput = document.getElementById("user-input");
+            const sendMessageBtn = document.getElementById("send-message");
+            const typingIndicator = document.getElementById("typing-indicator");
+            const startDiagnosticBtn =
+                document.getElementById("start-diagnostic");
+            const completeDiagnosticBtn = document.getElementById(
+                "complete-diagnostic"
+            );
+            const restartDiagnosticBtn =
+                document.getElementById("restart-diagnostic");
+            const newAssessmentBtn = document.getElementById("new-assessment");
             const themeToggle = document.getElementById("theme-toggle");
             const themeLabel = document.getElementById("theme-label");
+            const alertContainer = document.getElementById("alert-container");
 
-            themeToggle.addEventListener("change", function () {
-                if (this.checked) {
+            // --- Initialization ---
+            document.addEventListener("DOMContentLoaded", () => {
+                // Set initial theme based on preference or default
+                const prefersDark =
+                    window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (
+                    localStorage.getItem("theme") === "dark" ||
+                    (!localStorage.getItem("theme") && prefersDark)
+                ) {
+                    themeToggle.checked = true;
                     document.documentElement.setAttribute(
                         "data-bs-theme",
                         "dark"
@@ -928,503 +1083,700 @@
                     );
                     themeLabel.textContent = "Dark Mode";
                 }
+
+                // Initialize view
+                navigateToStage("setup");
+                setupProgressStepClickHandlers(); // Add click handlers for steps
             });
 
-            // Progress steps functionality
-            function updateProgressSteps(currentStep) {
-                document.querySelectorAll(".progress-step").forEach((step) => {
-                    step.classList.remove("step-active", "step-complete");
-                });
-
-                if (currentStep === "setup") {
-                    document
-                        .getElementById("step-setup")
-                        .classList.add("step-active");
-                } else if (currentStep === "diagnostic") {
-                    document
-                        .getElementById("step-setup")
-                        .classList.add("step-complete");
-                    document
-                        .getElementById("step-diagnostic")
-                        .classList.add("step-active");
-                } else if (currentStep === "results") {
-                    document
-                        .getElementById("step-setup")
-                        .classList.add("step-complete");
-                    document
-                        .getElementById("step-diagnostic")
-                        .classList.add("step-complete");
-                    document
-                        .getElementById("step-results")
-                        .classList.add("step-active");
+            // --- Theme Switcher ---
+            themeToggle.addEventListener("change", function () {
+                if (this.checked) {
+                    document.documentElement.setAttribute(
+                        "data-bs-theme",
+                        "dark"
+                    );
+                    themeLabel.textContent = "Light Mode";
+                    localStorage.setItem("theme", "dark");
+                } else {
+                    document.documentElement.setAttribute(
+                        "data-bs-theme",
+                        "light"
+                    );
+                    themeLabel.textContent = "Dark Mode";
+                    localStorage.setItem("theme", "light");
                 }
+                // Re-render graphs if visible, as colors might change
+                if (currentStage === "results" && diagnosticResults) {
+                    if (
+                        document.getElementById("knowledge-graph").style
+                            .display !== "none"
+                    ) {
+                        createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                    }
+                    if (
+                        document.getElementById("roadmap-diagram").style
+                            .display !== "none"
+                    ) {
+                        createRoadmapDiagram(
+                            diagnosticResults.learning_roadmap
+                        );
+                    }
+                }
+            });
+
+            // --- Navigation Logic ---
+
+            function navigateToStage(stageName) {
+                console.log(`Navigating to stage: ${stageName}`);
+                currentStage = stageName;
+
+                // Hide all sections first
+                setupForm.style.display = "none";
+                chatSection.style.display = "none";
+                resultContainer.style.display = "none";
+
+                // Show the target section and populate it
+                switch (stageName) {
+                    case "setup":
+                        setupForm.style.display = "block";
+                        populateSetupForm();
+                        // Disable start button if diagnostic already started
+                        startDiagnosticBtn.disabled = !!sessionId;
+                        break;
+                    case "diagnostic":
+                        chatSection.style.display = "block";
+                        rebuildChatHistory();
+                        // Disable input if diagnostic is complete
+                        userInput.disabled = isDiagnosticComplete;
+                        sendMessageBtn.disabled = isDiagnosticComplete;
+                        completeDiagnosticBtn.disabled = isDiagnosticComplete; // Also disable complete button if already done
+                        // Scroll to bottom
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                        break;
+                    case "results":
+                        resultContainer.style.display = "block";
+                        if (diagnosticResults) {
+                            displayResults(diagnosticResults); // Assumes results are loaded
+                        } else {
+                            // Handle case where results aren't loaded yet (e.g., direct navigation attempt)
+                            console.warn(
+                                "Attempted to navigate to results, but no results data found."
+                            );
+                            // Optionally show a loading state or redirect back
+                            showAlert(
+                                "Diagnostic results not yet available.",
+                                "warning"
+                            );
+                            navigateToStage("diagnostic"); // Go back to diagnostic
+                            return; // Prevent progress update below if redirecting
+                        }
+                        break;
+                }
+                updateProgressSteps(stageName);
             }
 
-            // Start diagnostic
-            document
-                .getElementById("start-diagnostic")
-                .addEventListener("click", function () {
-                    const subject = document.getElementById("subject").value;
-                    const goal = document.getElementById("goal").value;
-                    const age = document.getElementById("age").value;
-                    const grade = document.getElementById("grade").value;
+            function populateSetupForm() {
+                document.getElementById("subject").value = setupData.subject;
+                document.getElementById("goal").value = setupData.goal;
+                document.getElementById("age").value = setupData.age;
+                document.getElementById("grade").value = setupData.grade;
+            }
 
-                    if (!subject || !goal) {
-                        showAlert(
-                            "Please enter both subject and goal",
-                            "danger"
-                        );
-                        return;
+            function rebuildChatHistory() {
+                chatContainer.innerHTML = ""; // Clear existing messages
+                chatHistory.forEach((msg) => {
+                    // Use the existing addMessage function, but prevent adding to history again
+                    addMessage(msg.role, msg.content, false);
+                });
+                // Ensure typing indicator is hidden when rebuilding
+                hideTypingIndicator();
+            }
+
+            // --- Progress Steps ---
+            function updateProgressSteps(currentStep) {
+                const steps = ["setup", "diagnostic", "results"];
+                let completed = true; // Flag to track if prior steps are complete
+
+                steps.forEach((step, index) => {
+                    const stepElement = document.getElementById(`step-${step}`);
+                    stepElement.classList.remove(
+                        "step-active",
+                        "step-complete",
+                        "clickable"
+                    );
+
+                    if (step === currentStep) {
+                        stepElement.classList.add("step-active");
+                        stepElement.classList.add("clickable"); // Current step is clickable
+                        completed = false; // Steps after this one are not completed yet
+                    } else if (completed) {
+                        stepElement.classList.add("step-complete");
+                        stepElement.classList.add("clickable"); // Completed steps are clickable
                     }
+                });
+            }
 
-                    // Update progress indicator
-                    updateProgressSteps("diagnostic");
+            function setupProgressStepClickHandlers() {
+                document
+                    .querySelectorAll(".progress-step")
+                    .forEach((stepElement) => {
+                        stepElement.addEventListener("click", () => {
+                            const stage = stepElement.dataset.step;
+                            let canNavigate = false;
 
-                    // Show typing indicator while waiting for response
-                    document.getElementById("setup-form").style.display =
-                        "none";
-                    document.getElementById("chat-section").style.display =
-                        "block";
-                    showTypingIndicator();
+                            // Determine if navigation to the clicked stage is allowed based on app state
+                            switch (stage) {
+                                case "setup":
+                                    canNavigate = true; // Always allow going back to setup
+                                    break;
+                                case "diagnostic":
+                                    // Allow if diagnostic has been started (sessionId exists)
+                                    canNavigate = !!sessionId;
+                                    break;
+                                case "results":
+                                    // Allow if diagnostic is complete AND results are loaded
+                                    canNavigate =
+                                        isDiagnosticComplete &&
+                                        !!diagnosticResults;
+                                    break;
+                            }
 
-                    fetch("/api/start-diagnostic", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            subject: subject,
-                            goal: goal,
-                            age: age || null,
-                            grade: grade || null,
-                        }),
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            sessionId = data.session_id;
-                            hideTypingIndicator();
-                            addMessage("assistant", data.message);
-                        })
-                        .catch((error) => {
-                            hideTypingIndicator();
-                            console.error("Error:", error);
-                            showAlert(
-                                "Failed to start diagnostic session",
-                                "danger"
-                            );
+                            if (canNavigate) {
+                                // Add a specific check: Even if marked complete, don't go to results if data isn't loaded
+                                if (stage === "results" && !diagnosticResults) {
+                                    console.warn(
+                                        "Attempted to navigate to results stage, but results data is not ready."
+                                    );
+                                    showAlert(
+                                        "Results are not yet available. Please wait or complete the diagnostic first.",
+                                        "warning"
+                                    );
+                                    return; // Stop navigation
+                                }
+                                // Navigate if allowed
+                                navigateToStage(stage);
+                            } else {
+                                // Provide feedback if navigation is not allowed yet
+                                console.log(
+                                    `Stage ${stage} is not yet reachable.`
+                                );
+                                let message =
+                                    "Please complete the current step first.";
+                                if (stage === "diagnostic" && !sessionId) {
+                                    message =
+                                        "Please start the diagnostic from the Setup page first.";
+                                } else if (
+                                    stage === "results" &&
+                                    !isDiagnosticComplete
+                                ) {
+                                    message =
+                                        "Please complete the diagnostic assessment first.";
+                                }
+                                showAlert(message, "info");
+                            }
                         });
-                });
-
-            // Restart diagnostic
-            document
-                .getElementById("restart-diagnostic")
-                .addEventListener("click", function () {
-                    if (
-                        confirm(
-                            "Are you sure you want to restart the diagnostic? All progress will be lost."
-                        )
-                    ) {
-                        document.getElementById("chat-section").style.display =
-                            "none";
-                        document.getElementById("setup-form").style.display =
-                            "block";
-                        document.getElementById("chat-container").innerHTML =
-                            "";
-                        updateProgressSteps("setup");
-                    }
-                });
-
-            // Send message functionality
-            document
-                .getElementById("send-message")
-                .addEventListener("click", sendMessage);
-            document
-                .getElementById("user-input")
-                .addEventListener("keypress", function (e) {
-                    if (e.key === "Enter") {
-                        sendMessage();
-                    }
-                });
-
-            function sendMessage() {
-                if (!sessionId) return;
-
-                const userInput = document
-                    .getElementById("user-input")
-                    .value.trim();
-                if (!userInput) return;
-
-                addMessage("user", userInput);
-                document.getElementById("user-input").value = "";
-
-                showTypingIndicator();
-
-                fetch("/api/continue-diagnostic", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        session_id: sessionId,
-                        message: userInput,
-                    }),
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        hideTypingIndicator();
-                        addMessage("assistant", data.message);
-
-                        if (data.is_complete && data.diagnostic_result) {
-                            diagnosticResults = data.diagnostic_result;
-                            displayResults(diagnosticResults);
-                            updateProgressSteps("results");
-                        }
-                    })
-                    .catch((error) => {
-                        hideTypingIndicator();
-                        console.error("Error:", error);
-                        showAlert("Failed to send message", "danger");
                     });
             }
 
-            // Complete diagnostic button
-            document
-                .getElementById("complete-diagnostic")
-                .addEventListener("click", function () {
-                    if (!sessionId) return;
+            // --- Event Listeners ---
 
-                    showTypingIndicator();
+            // Start Diagnostic Button
+            startDiagnosticBtn.addEventListener("click", function () {
+                setupData.subject = document
+                    .getElementById("subject")
+                    .value.trim();
+                setupData.goal = document.getElementById("goal").value.trim();
+                setupData.age = document.getElementById("age").value.trim();
+                setupData.grade = document.getElementById("grade").value.trim();
 
-                    fetch("/api/complete-diagnostic", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            session_id: sessionId,
-                        }),
+                if (!setupData.subject || !setupData.goal) {
+                    showAlert("Please enter both subject and goal", "warning");
+                    return;
+                }
+
+                // Reset state for a potentially new diagnostic run (if user went back and restarted)
+                resetChatState();
+                isDiagnosticComplete = false; // Ensure it's not marked complete
+
+                navigateToStage("diagnostic"); // Move to chat view first
+                showTypingIndicator(); // Show indicator immediately
+
+                fetch("/api/start-diagnostic", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(setupData),
+                })
+                    .then(handleFetchResponse)
+                    .then((data) => {
+                        sessionId = data.session_id;
+                        hideTypingIndicator();
+                        addMessage("assistant", data.message);
+                        startDiagnosticBtn.disabled = true; // Disable after starting
                     })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            hideTypingIndicator();
+                    .catch((error) => {
+                        hideTypingIndicator();
+                        console.error("Error starting diagnostic:", error);
+                        showAlert(
+                            `Error: ${
+                                error.message ||
+                                "Failed to start diagnostic session"
+                            }`,
+                            "danger"
+                        );
+                        navigateToStage("setup"); // Go back to setup on error
+                    });
+            });
 
-                            if (data.error) {
-                                showAlert("Error: " + data.error, "danger");
-                                return;
-                            }
+            // Send Message Button & Enter Key
+            sendMessageBtn.addEventListener("click", handleSendMessage);
+            userInput.addEventListener("keypress", function (e) {
+                if (e.key === "Enter" && !sendMessageBtn.disabled) {
+                    handleSendMessage();
+                }
+            });
 
-                            diagnosticResults = data.diagnostic_result;
-                            displayResults(diagnosticResults);
-                            updateProgressSteps("results");
-                        })
-                        .catch((error) => {
-                            hideTypingIndicator();
-                            console.error("Error:", error);
-                            showAlert(
-                                "Failed to complete diagnostic",
-                                "danger"
-                            );
-                        });
+            function handleSendMessage() {
+                if (!sessionId || isDiagnosticComplete) return;
+
+                const messageText = userInput.value.trim();
+                if (!messageText) return;
+
+                addMessage("user", messageText);
+                userInput.value = "";
+                showTypingIndicator();
+                userInput.disabled = true; // Disable input while waiting
+                sendMessageBtn.disabled = true;
+
+                fetch("/api/continue-diagnostic", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: messageText,
+                    }),
+                })
+                    .then(handleFetchResponse)
+                    .then((data) => {
+                        hideTypingIndicator();
+                        addMessage("assistant", data.message);
+                        // Re-enable input if diagnostic is not complete
+                        if (!isDiagnosticComplete) {
+                            userInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            userInput.focus(); // Focus back on input
+                        }
+                        // Note: The backend's 'is_complete' isn't used here; completion is explicit via button.
+                    })
+                    .catch((error) => {
+                        hideTypingIndicator();
+                        console.error("Error continuing diagnostic:", error);
+                        showAlert(
+                            `Error: ${
+                                error.message || "Failed to send message"
+                            }`,
+                            "danger"
+                        );
+                        // Re-enable input on error if not complete
+                        if (!isDiagnosticComplete) {
+                            userInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                        }
+                    });
+            }
+
+            // Complete Diagnostic Button
+            completeDiagnosticBtn.addEventListener("click", function () {
+                if (!sessionId || isDiagnosticComplete) return;
+
+                if (
+                    !confirm(
+                        "Are you sure you want to complete the assessment and view your results? You won't be able to ask more questions."
+                    )
+                ) {
+                    return;
+                }
+
+                showTypingIndicator();
+                userInput.disabled = true; // Disable input permanently now
+                sendMessageBtn.disabled = true;
+                completeDiagnosticBtn.disabled = true; // Disable complete button
+
+                fetch("/api/complete-diagnostic", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ session_id: sessionId }),
+                })
+                    .then(handleFetchResponse)
+                    .then((data) => {
+                        hideTypingIndicator();
+                        diagnosticResults = data.diagnostic_result;
+                        isDiagnosticComplete = true; // Mark as complete
+                        navigateToStage("results"); // Navigate to results page
+                    })
+                    .catch((error) => {
+                        hideTypingIndicator();
+                        console.error("Error completing diagnostic:", error);
+                        showAlert(
+                            `Error: ${
+                                error.message || "Failed to generate results"
+                            }`,
+                            "danger"
+                        );
+                        // Re-enable complete button on error, but keep input disabled
+                        completeDiagnosticBtn.disabled = false;
+                    });
+            });
+
+            // Restart Diagnostic Button
+            restartDiagnosticBtn.addEventListener("click", function () {
+                if (
+                    confirm(
+                        "Are you sure you want to restart the diagnostic? All progress will be lost."
+                    )
+                ) {
+                    resetAppState();
+                    navigateToStage("setup");
+                }
+            });
+
+            // New Assessment Button (on results page)
+            newAssessmentBtn.addEventListener("click", function () {
+                if (confirm("Start a completely new assessment?")) {
+                    resetAppState();
+                    navigateToStage("setup");
+                }
+            });
+
+            // --- Chat Helpers ---
+            function addMessage(role, content, addToHistory = true) {
+                if (addToHistory) {
+                    chatHistory.push({ role, content });
+                }
+
+                const messageDiv = document.createElement("div");
+                messageDiv.className = `message ${role}-message`;
+                // Sanitize content before parsing? Marked generally handles basic XSS, but be cautious.
+                messageDiv.innerHTML = marked.parse(
+                    content || "*No content received*"
+                ); // Handle potential null/empty content
+
+                chatContainer.appendChild(messageDiv);
+                // Scroll to bottom smoothly
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: "smooth",
                 });
+            }
 
-            // Typing indicator functions
             function showTypingIndicator() {
-                const indicator = document.getElementById("typing-indicator");
-                indicator.style.display = "flex";
-                const chatContainer = document.getElementById("chat-container");
+                typingIndicator.style.display = "flex";
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
             function hideTypingIndicator() {
-                document.getElementById("typing-indicator").style.display =
-                    "none";
+                typingIndicator.style.display = "none";
             }
 
-            // Add message to chat
-            function addMessage(role, content) {
-                const chatContainer = document.getElementById("chat-container");
-                const messageDiv = document.createElement("div");
-                messageDiv.className = `message ${role}-message`;
-                messageDiv.innerHTML = marked.parse(content);
-
-                chatContainer.appendChild(messageDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-
-            // Display results
-            // Display results
+            // --- Result Display Logic ---
             function displayResults(results) {
-                document.getElementById("chat-section").style.display = "none";
-                document.getElementById("result-container").style.display =
-                    "block";
+                if (!results) {
+                    showAlert("No diagnostic results to display.", "warning");
+                    return;
+                }
+                console.log("Displaying results:", results);
 
                 // Populate strengths
                 const strengthsList = document.getElementById("strengths-list");
-                strengthsList.innerHTML = "";
-                results.diagnostic_summary.strengths.forEach((strength) => {
-                    const li = document.createElement("li");
-                    li.className = "list-group-item";
-                    li.innerHTML = strength;
-                    strengthsList.appendChild(li);
-                });
+                strengthsList.innerHTML =
+                    results.diagnostic_summary?.strengths?.length > 0
+                        ? results.diagnostic_summary.strengths
+                              .map(
+                                  (s) =>
+                                      `<li class="list-group-item">${marked.parseInline(
+                                          s
+                                      )}</li>`
+                              )
+                              .join("")
+                        : '<li class="list-group-item text-muted">No specific strengths identified.</li>';
 
                 // Populate gaps
                 const gapsList = document.getElementById("gaps-list");
-                gapsList.innerHTML = "";
-                results.diagnostic_summary.gaps.forEach((gap) => {
-                    const li = document.createElement("li");
-                    li.className = "list-group-item";
-                    li.innerHTML = gap;
-                    gapsList.appendChild(li);
-                });
+                gapsList.innerHTML =
+                    results.diagnostic_summary?.gaps?.length > 0
+                        ? results.diagnostic_summary.gaps
+                              .map(
+                                  (g) =>
+                                      `<li class="list-group-item">${marked.parseInline(
+                                          g
+                                      )}</li>`
+                              )
+                              .join("")
+                        : '<li class="list-group-item text-muted">No specific areas for improvement identified.</li>';
 
-                // Create Knowledge Graph
-                if (results.knowledge_graph) {
+                // Create Knowledge Graph & List (handle potential missing data)
+                if (results.knowledge_graph && results.knowledge_graph.nodes) {
                     createKnowledgeGraph(results.knowledge_graph);
                     createKnowledgeList(results.knowledge_graph);
+                    // Ensure correct view is shown initially
+                    document.getElementById("knowledge-graph").style.display =
+                        "block";
+                    document.getElementById("knowledge-list").style.display =
+                        "none";
+                    document
+                        .getElementById("knowledge-graph-btn")
+                        .classList.add("active", "btn-primary");
+                    document
+                        .getElementById("knowledge-graph-btn")
+                        .classList.remove("btn-outline-primary");
+                    document
+                        .getElementById("knowledge-list-btn")
+                        .classList.remove("active", "btn-primary");
+                    document
+                        .getElementById("knowledge-list-btn")
+                        .classList.add("btn-outline-primary");
+                } else {
+                    document.getElementById("knowledge-graph").innerHTML =
+                        '<p class="text-center text-muted p-3">Knowledge map data not available.</p>';
+                    document.getElementById("knowledge-list").innerHTML =
+                        '<p class="text-center text-muted p-3">Knowledge list data not available.</p>';
                 }
 
-                // Populate roadmap
+                // Populate roadmap list view
                 const roadmapContainer =
                     document.getElementById("roadmap-container");
-                roadmapContainer.innerHTML = "";
-                results.learning_roadmap.forEach((item, index) => {
-                    const itemDiv = document.createElement("div");
-                    itemDiv.className = "roadmap-item";
+                if (
+                    results.learning_roadmap &&
+                    results.learning_roadmap.length > 0
+                ) {
+                    roadmapContainer.innerHTML = results.learning_roadmap
+                        .map(
+                            (item, index) => `
+                        <div class="roadmap-item" data-id="${item.id || index}">
+                            <h5>${index + 1}. ${marked.parseInline(
+                                item.concept || "Unnamed Step"
+                            )}</h5>
+                            <p>${marked.parseInline(item.description || "")}</p>
+                            <p class="mb-1"><strong>Prerequisites:</strong> ${
+                                item.prerequisites?.join(", ") || "None"
+                            }</p>
+                            <p><strong>Suggested Resources:</strong> ${
+                                item.resources?.join(", ") || "General study"
+                            }</p>
+                        </div>
+                    `
+                        )
+                        .join("");
 
-                    const title = document.createElement("h5");
-                    title.innerHTML = `${index + 1}. ${item.concept}`;
-
-                    const desc = document.createElement("p");
-                    desc.innerHTML = item.description;
-
-                    const prereqTitle = document.createElement("strong");
-                    prereqTitle.innerText = "Prerequisites: ";
-
-                    const prereqSpan = document.createElement("span");
-                    prereqSpan.innerText =
-                        item.prerequisites.join(", ") || "None";
-
-                    const resourcesTitle = document.createElement("strong");
-                    resourcesTitle.innerText = "Suggested Resources: ";
-
-                    const resourcesSpan = document.createElement("span");
-                    resourcesSpan.innerText = item.resources.join(", ");
-
-                    itemDiv.appendChild(title);
-                    itemDiv.appendChild(desc);
-
-                    const prereqP = document.createElement("p");
-                    prereqP.appendChild(prereqTitle);
-                    prereqP.appendChild(prereqSpan);
-                    itemDiv.appendChild(prereqP);
-
-                    const resourcesP = document.createElement("p");
-                    resourcesP.appendChild(resourcesTitle);
-                    resourcesP.appendChild(resourcesSpan);
-                    itemDiv.appendChild(resourcesP);
-
-                    roadmapContainer.appendChild(itemDiv);
-                });
-
-                // Create Roadmap Diagram
-                createRoadmapDiagram(results.learning_roadmap);
+                    // Create Roadmap Diagram View
+                    createRoadmapDiagram(results.learning_roadmap);
+                    // Ensure correct view is shown initially
+                    document.getElementById("roadmap-container").style.display =
+                        "block";
+                    document.getElementById("roadmap-diagram").style.display =
+                        "none";
+                    document
+                        .getElementById("list-view-btn")
+                        .classList.add("active", "btn-primary");
+                    document
+                        .getElementById("list-view-btn")
+                        .classList.remove("btn-outline-primary");
+                    document
+                        .getElementById("diagram-view-btn")
+                        .classList.remove("active", "btn-primary");
+                    document
+                        .getElementById("diagram-view-btn")
+                        .classList.add("btn-outline-primary");
+                } else {
+                    roadmapContainer.innerHTML =
+                        '<p class="text-center text-muted p-3">Learning roadmap not available.</p>';
+                    document.getElementById("roadmap-diagram").innerHTML =
+                        '<p class="text-center text-muted p-3">Roadmap diagram not available.</p>';
+                }
 
                 // Populate recommendations
                 const recommendationsList = document.getElementById(
                     "recommendations-list"
                 );
-                recommendationsList.innerHTML = "";
-                results.recommendations.forEach((recommendation) => {
-                    const li = document.createElement("li");
-                    li.className = "list-group-item";
-                    li.innerHTML = marked.parse(recommendation);
-                    recommendationsList.appendChild(li);
-                });
+                recommendationsList.innerHTML =
+                    results.recommendations?.length > 0
+                        ? results.recommendations
+                              .map(
+                                  (r) =>
+                                      `<li class="list-group-item">${marked.parse(
+                                          r
+                                      )}</li>`
+                              )
+                              .join("")
+                        : '<li class="list-group-item text-muted">No specific recommendations provided.</li>';
 
                 // Populate interests
-                document.getElementById("interests-display").innerText =
-                    results.user_interests.join(", ");
+                document.getElementById("interests-display").textContent =
+                    results.user_interests?.join(", ") ||
+                    "No specific interests recorded.";
+
+                // Ensure chat is disabled (might be redundant, but safe)
+                userInput.disabled = true;
+                sendMessageBtn.disabled = true;
+                completeDiagnosticBtn.disabled = true;
             }
 
-            // Create Knowledge Graph
-            // Replace the createKnowledgeGraph function
+            // --- d3 Visualizations (Knowledge Graph & Roadmap Diagram) ---
+
             function createKnowledgeGraph(knowledgeData) {
-                // Clear previous graph
-                d3.select("#knowledge-graph").html("");
+                const graphContainer = d3.select("#knowledge-graph");
+                graphContainer.html(""); // Clear previous graph
 
                 if (
                     !knowledgeData ||
                     !knowledgeData.nodes ||
                     knowledgeData.nodes.length === 0
                 ) {
-                    const placeholder = d3
-                        .select("#knowledge-graph")
+                    graphContainer
                         .append("div")
-                        .attr("class", "text-center py-5")
-                        .text("No knowledge data available.");
+                        .attr("class", "text-center text-muted py-5")
+                        .text("No knowledge data available for map view.");
                     return;
                 }
 
-                // Create tooltip div
-                const tooltip = d3
-                    .select("#knowledge-graph")
+                const tooltip = graphContainer
                     .append("div")
                     .attr("class", "node-tooltip")
-                    .style("position", "absolute")
-                    .style("pointer-events", "none"); // Fix: Make tooltip ignore mouse events
+                    .style("opacity", 0);
 
-                // Set up the SVG container
-                const width =
-                    document.getElementById("knowledge-graph").offsetWidth;
-                const height = 400;
+                const width = graphContainer
+                    .node()
+                    .getBoundingClientRect().width;
+                const height = 400; // Fixed height
 
-                const svg = d3
-                    .select("#knowledge-graph")
+                const svg = graphContainer
                     .append("svg")
                     .attr("width", width)
-                    .attr("height", height);
+                    .attr("height", height)
+                    .attr("viewBox", [0, 0, width, height]) // Responsive viewBox
+                    .style("max-width", "100%")
+                    .style("height", "auto");
 
-                // Create a group for the graph
                 const g = svg.append("g");
 
-                // Create a zoom behavior
                 const zoom = d3
                     .zoom()
-                    .scaleExtent([0.5, 3])
+                    .scaleExtent([0.3, 4]) // Wider zoom range
                     .on("zoom", (event) => {
                         g.attr("transform", event.transform);
+                        // Adjust stroke width on zoom for better visibility
                         g.selectAll("circle").attr(
                             "stroke-width",
                             2 / event.transform.k
+                        );
+                        g.selectAll(".link").attr(
+                            "stroke-width",
+                            1.5 / event.transform.k
                         );
                     });
 
                 svg.call(zoom);
 
-                // Create a force simulation with improved spacing
+                // Filter out links with missing source/target nodes (robustness)
+                const validLinks = knowledgeData.links.filter(
+                    (link) =>
+                        knowledgeData.nodes.find((n) => n.id === link.source) &&
+                        knowledgeData.nodes.find((n) => n.id === link.target)
+                );
+
                 const simulation = d3
                     .forceSimulation(knowledgeData.nodes)
                     .force(
                         "link",
                         d3
-                            .forceLink(knowledgeData.links)
+                            .forceLink(validLinks)
                             .id((d) => d.id)
-                            .distance(150) // Increased from 120 for more spacing
-                    )
-                    .force("charge", d3.forceManyBody().strength(-400)) // Stronger repulsion force
+                            .distance(100)
+                            .strength(0.5)
+                    ) // Adjusted link force
+                    .force("charge", d3.forceManyBody().strength(-350)) // Slightly weaker charge
                     .force("center", d3.forceCenter(width / 2, height / 2))
-                    .force("x", d3.forceX(width / 2).strength(0.08))
-                    .force("y", d3.forceY(height / 2).strength(0.08))
-                    .force("collision", d3.forceCollide().radius(40)); // Add collision detection
+                    .force("x", d3.forceX(width / 2).strength(0.05)) // Weaker positioning force
+                    .force("y", d3.forceY(height / 2).strength(0.05))
+                    .force("collision", d3.forceCollide().radius(30)); // Collision radius
 
-                // Define arrow marker
                 svg.append("defs")
                     .append("marker")
                     .attr("id", "knowledge-arrow")
                     .attr("viewBox", "0 -5 10 10")
-                    .attr("refX", 28) // Increased from 25 for better arrow positioning
+                    .attr("refX", 25) // Adjusted for node size
                     .attr("refY", 0)
-                    .attr("markerWidth", 6)
-                    .attr("markerHeight", 6)
+                    .attr("markerWidth", 5)
+                    .attr("markerHeight", 5)
                     .attr("orient", "auto")
                     .append("path")
                     .attr("d", "M0,-5L10,0L0,5")
                     .attr("fill", "#999");
 
-                // Create links
                 const link = g
                     .append("g")
                     .attr("class", "links")
                     .selectAll("line")
-                    .data(knowledgeData.links)
-                    .enter()
-                    .append("line")
+                    .data(validLinks)
+                    .join("line")
                     .attr("class", "link")
-                    .attr("stroke-width", 1.5) // Added for better visibility
-                    .attr("stroke", "#aaa") // Added for consistency
                     .attr("marker-end", "url(#knowledge-arrow)")
                     .attr("stroke-dasharray", (d) =>
-                        d.relationship === "relates_to" ? "5,5" : "none"
+                        d.relationship === "relates_to" ? "4,4" : "none"
                     );
 
-                // Create nodes
                 const node = g
                     .append("g")
                     .attr("class", "nodes")
                     .selectAll(".node")
                     .data(knowledgeData.nodes)
-                    .enter()
-                    .append("g")
+                    .join("g")
                     .attr("class", "node knowledge-node")
-                    .call(
-                        d3
-                            .drag()
-                            .on("start", dragstarted)
-                            .on("drag", dragged)
-                            .on("end", dragended)
-                    );
+                    .call(drag(simulation));
 
-                // Add circles to nodes with increased size
                 node.append("circle")
-                    .attr("r", 15) // Increased from 12
-                    .attr("class", (d) => `node-proficiency-${d.proficiency}`)
+                    .attr("r", 14) // Slightly larger radius
+                    .attr(
+                        "class",
+                        (d) => `node-proficiency-${d.proficiency || "low"}`
+                    ) // Default to low if missing
                     .on("mouseover", function (event, d) {
                         tooltip
                             .transition()
                             .duration(200)
                             .style("opacity", 0.9);
+                        tooltip.html(`
+                            <strong>${d.name || "Unnamed"}</strong><br>
+                            ${d.description || "No description."}<br>
+                            <em>Proficiency: ${d.proficiency || "Unknown"}</em>
+                        `);
+                        // Position tooltip relative to the container, not the circle
+                        const [x, y] = d3.pointer(event, graphContainer.node());
                         tooltip
-                            .html(
-                                `
-                          <strong>${d.name}</strong><br>
-                          ${d.description}<br>
-                          <em>Proficiency: ${d.proficiency}</em>
-                        `
-                            )
-                            // Use event offset for dynamic tooltip placement
-                            .style("left", event.offsetX + 10 + "px")
-                            .style("top", event.offsetY - 28 + "px");
+                            .style("left", x + 15 + "px")
+                            .style("top", y - 28 + "px");
+
+                        // Highlight connected nodes/links
+                        highlightConnections(d, node, link);
                     })
                     .on("mouseout", function () {
                         tooltip.transition().duration(300).style("opacity", 0);
+                        // Reset highlighting
+                        resetHighlighting(node, link);
                     });
 
-                // Add labels to nodes with better offset
                 node.append("text")
-                    .attr("dx", 18) // Increased from 15
+                    .attr("dx", 18) // Adjusted offset
                     .attr("dy", ".35em")
-                    .attr("font-size", "12px") // Added explicit font size
-                    .text((d) => d.name);
+                    .attr("font-size", "11px") // Slightly smaller text
+                    .text((d) => d.name || "Unnamed");
 
-                // Add subtle drop shadow to nodes for depth
-                node.select("circle").style(
-                    "filter",
-                    "drop-shadow(0px 1px 2px rgba(0,0,0,0.2))"
-                );
-
-                node.on("mouseover", function (event, d) {
-                    d3.select(this)
-                        .transition()
-                        .duration(200)
-                        .attr(
-                            "transform",
-                            `translate(${d.x},${d.y}) scale(1.1)`
-                        );
-                }).on("mouseout", function (event, d) {
-                    d3.select(this)
-                        .transition()
-                        .duration(200)
-                        .attr("transform", `translate(${d.x},${d.y}) scale(1)`);
-                });
-
-                // Update positions on each tick of the simulation
                 simulation.on("tick", () => {
-                    // Keep nodes within bounds
-                    knowledgeData.nodes.forEach((d) => {
-                        d.x = Math.max(20, Math.min(width - 20, d.x));
-                        d.y = Math.max(20, Math.min(height - 20, d.y));
-                    });
+                    // Keep nodes within bounds (optional, can let them go slightly off)
+                    // knowledgeData.nodes.forEach(d => {
+                    //     d.x = Math.max(15, Math.min(width - 15, d.x));
+                    //     d.y = Math.max(15, Math.min(height - 15, d.y));
+                    // });
 
                     link.attr("x1", (d) => d.source.x)
                         .attr("y1", (d) => d.source.y)
@@ -1434,32 +1786,105 @@
                     node.attr("transform", (d) => `translate(${d.x},${d.y})`);
                 });
 
-                // Helper functions for dragging
-                function dragstarted(event, d) {
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
-                    d.fx = d.x;
-                    d.fy = d.y;
+                // Drag functions
+                function drag(simulation) {
+                    function dragstarted(event, d) {
+                        if (!event.active)
+                            simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    }
+                    function dragged(event, d) {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    }
+                    function dragended(event, d) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null; // Let simulation take over again
+                        d.fy = null;
+                    }
+                    return d3
+                        .drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended);
                 }
 
-                function dragged(event, d) {
-                    d.fx = event.x;
-                    d.fy = event.y;
+                // Highlighting functions
+                function highlightConnections(
+                    selectedNode,
+                    allNodes,
+                    allLinks
+                ) {
+                    const connectedNodeIds = new Set();
+                    connectedNodeIds.add(selectedNode.id);
+
+                    allLinks.each(function (l) {
+                        const linkElement = d3.select(this);
+                        if (
+                            l.source.id === selectedNode.id ||
+                            l.target.id === selectedNode.id
+                        ) {
+                            linkElement
+                                .transition()
+                                .duration(150)
+                                .attr("stroke", "#f00")
+                                .attr("stroke-opacity", 1)
+                                .attr(
+                                    "stroke-width",
+                                    2 / d3.zoomTransform(svg.node()).k
+                                );
+                            connectedNodeIds.add(l.source.id);
+                            connectedNodeIds.add(l.target.id);
+                        } else {
+                            linkElement
+                                .transition()
+                                .duration(150)
+                                .attr("stroke-opacity", 0.2);
+                        }
+                    });
+
+                    allNodes.each(function (n) {
+                        const nodeElement = d3.select(this);
+                        if (connectedNodeIds.has(n.id)) {
+                            nodeElement
+                                .transition()
+                                .duration(150)
+                                .style("opacity", 1);
+                        } else {
+                            nodeElement
+                                .transition()
+                                .duration(150)
+                                .style("opacity", 0.3);
+                        }
+                    });
                 }
 
-                function dragended(event, d) {
-                    if (!event.active) simulation.alphaTarget(0);
-                    d.fx = null;
-                    d.fy = null;
+                function resetHighlighting(allNodes, allLinks) {
+                    allNodes.transition().duration(200).style("opacity", 1);
+                    allLinks
+                        .transition()
+                        .duration(200)
+                        .attr("stroke", "#aaa") // Reset color based on theme potentially
+                        .attr("stroke-opacity", 0.7)
+                        .attr(
+                            "stroke-width",
+                            1.5 / d3.zoomTransform(svg.node()).k
+                        );
+                    // Re-apply dark theme link color if needed
+                    if (
+                        document.documentElement.getAttribute(
+                            "data-bs-theme"
+                        ) === "dark"
+                    ) {
+                        allLinks.attr("stroke", "#555");
+                    }
                 }
 
-                // Center the graph initially
-                svg.call(zoom.transform, d3.zoomIdentity);
-
-                // Run simulation longer for better initial layout
-                simulation.alpha(1).restart();
+                // Initial zoom fit (optional)
+                // svg.call(zoom.transform, d3.zoomIdentity);
             }
 
-            // Create Knowledge List View
             function createKnowledgeList(knowledgeData) {
                 const knowledgeList = document.getElementById("knowledge-list");
                 knowledgeList.innerHTML = "";
@@ -1470,111 +1895,94 @@
                     knowledgeData.nodes.length === 0
                 ) {
                     knowledgeList.innerHTML =
-                        "<p class='text-center py-3'>No knowledge data available.</p>";
+                        "<p class='text-center text-muted py-3'>No knowledge data available for list view.</p>";
                     return;
                 }
 
-                // Group by proficiency
                 const proficiencyGroups = {
-                    high: { title: "Strong Knowledge", items: [] },
-                    medium: { title: "Familiar", items: [] },
-                    low: { title: "Basic Understanding", items: [] },
+                    high: [],
+                    medium: [],
+                    low: [],
+                    unknown: [],
                 };
-
                 knowledgeData.nodes.forEach((node) => {
-                    if (proficiencyGroups[node.proficiency]) {
-                        proficiencyGroups[node.proficiency].items.push(node);
-                    }
+                    (
+                        proficiencyGroups[node.proficiency] ||
+                        proficiencyGroups.unknown
+                    ).push(node);
                 });
 
-                // Create sections for each proficiency level
-                for (const [level, group] of Object.entries(
-                    proficiencyGroups
-                )) {
-                    if (group.items.length > 0) {
-                        const section = document.createElement("div");
-                        section.className = "mb-3";
+                const createSection = (title, items) => {
+                    if (items.length === 0) return "";
+                    return `
+                        <div class="mb-3">
+                            <h5>${title}</h5>
+                            <ul class="list-group">
+                                ${items
+                                    .map(
+                                        (item) => `
+                                    <li class="list-group-item">
+                                        <strong>${marked.parseInline(
+                                            item.name || "Unnamed"
+                                        )}</strong>
+                                        <p class="mb-0 mt-1" style="font-size: 0.875rem;">${marked.parseInline(
+                                            item.description ||
+                                                "No description."
+                                        )}</p>
+                                    </li>
+                                `
+                                    )
+                                    .join("")}
+                            </ul>
+                        </div>
+                    `;
+                };
 
-                        const heading = document.createElement("h5");
-                        heading.textContent = group.title;
-                        section.appendChild(heading);
-
-                        const list = document.createElement("ul");
-                        list.className = "list-group";
-
-                        group.items.forEach((item) => {
-                            const listItem = document.createElement("li");
-                            listItem.className = "list-group-item";
-
-                            const title = document.createElement("strong");
-                            title.textContent = item.name;
-
-                            const description = document.createElement("p");
-                            description.className = "mb-0 mt-1";
-                            description.style.fontSize = "0.875rem";
-                            description.textContent = item.description;
-
-                            listItem.appendChild(title);
-                            listItem.appendChild(description);
-                            list.appendChild(listItem);
-                        });
-
-                        section.appendChild(list);
-                        knowledgeList.appendChild(section);
-                    }
-                }
+                knowledgeList.innerHTML =
+                    createSection("Strong Knowledge", proficiencyGroups.high) +
+                    createSection("Familiar", proficiencyGroups.medium) +
+                    createSection(
+                        "Basic Understanding / Needs Review",
+                        proficiencyGroups.low
+                    ) +
+                    createSection(
+                        "Proficiency Not Assessed",
+                        proficiencyGroups.unknown
+                    );
             }
 
-            // Create Roadmap Diagram View
             function createRoadmapDiagram(roadmapData) {
                 const container = document.getElementById("roadmap-diagram");
-                container.innerHTML = "";
+                container.innerHTML = ""; // Clear previous diagram
 
                 if (!roadmapData || roadmapData.length === 0) {
                     container.innerHTML =
-                        "<p class='text-center py-5'>No roadmap data available.</p>";
+                        "<p class='text-center text-muted py-5'>No roadmap data available for diagram view.</p>";
                     return;
                 }
 
-                // Group by stage
+                // Ensure unique IDs and group by stage
                 const stageGroups = {
-                    beginner: { title: "Beginner", items: [] },
-                    intermediate: { title: "Intermediate", items: [] },
-                    advanced: { title: "Advanced", items: [] },
+                    beginner: [],
+                    intermediate: [],
+                    advanced: [],
+                    other: [],
                 };
+                const conceptToIdMap = {};
+                let idCounter = 0;
 
-                // Fall back to evenly distributed stages if no stage property
-                if (!roadmapData[0].hasOwnProperty("stage")) {
-                    const chunkSize = Math.ceil(roadmapData.length / 3);
-                    roadmapData.forEach((item, index) => {
-                        if (index < chunkSize) {
-                            item.stage = "beginner";
-                        } else if (index < chunkSize * 2) {
-                            item.stage = "intermediate";
-                        } else {
-                            item.stage = "advanced";
-                        }
-                    });
-                }
-
-                // Add items to stage groups
-                roadmapData.forEach((item) => {
-                    // Assign unique ID if not present
-                    if (!item.id) {
-                        item.id = `item-${Math.random()
-                            .toString(36)
-                            .substr(2, 9)}`;
+                roadmapData.forEach((item, index) => {
+                    // Assign unique ID if missing or duplicate
+                    if (!item.id || conceptToIdMap[item.concept]) {
+                        item.id = `roadmap-node-${idCounter++}`;
                     }
+                    conceptToIdMap[item.concept] = item.id;
 
-                    if (stageGroups[item.stage]) {
-                        stageGroups[item.stage].items.push(item);
-                    } else {
-                        // Default to beginner if stage is not recognized
-                        stageGroups.beginner.items.push(item);
-                    }
+                    const stage = item.stage?.toLowerCase() || "other";
+                    (stageGroups[stage] || stageGroups.other).push(item);
                 });
 
-                // Arrows container
+                // Create container for SVG arrows
                 const arrowsContainer = document.createElement("div");
                 arrowsContainer.className = "roadmap-arrows";
                 const arrowsSvg = document.createElementNS(
@@ -1594,167 +2002,201 @@
                 );
                 marker.setAttribute("id", "arrowhead");
                 marker.setAttribute("viewBox", "0 -5 10 10");
-                marker.setAttribute("refX", "5");
+                marker.setAttribute("refX", "8"); // Adjust for arrow size/stroke
                 marker.setAttribute("refY", "0");
-                marker.setAttribute("markerWidth", "6");
-                marker.setAttribute("markerHeight", "6");
+                marker.setAttribute("markerWidth", "5"); // Smaller marker
+                marker.setAttribute("markerHeight", "5");
                 marker.setAttribute("orient", "auto");
-
-                const path = document.createElementNS(
+                const pathMarker = document.createElementNS(
                     "http://www.w3.org/2000/svg",
                     "path"
                 );
-                path.setAttribute("d", "M0,-5L10,0L0,5");
-                path.setAttribute("fill", "#adb5bd");
-
-                marker.appendChild(path);
+                pathMarker.setAttribute("d", "M0,-5L10,0L0,5");
+                pathMarker.setAttribute("fill", "#adb5bd"); // Match arrow color
+                marker.appendChild(pathMarker);
                 defs.appendChild(marker);
                 arrowsSvg.appendChild(defs);
 
                 // Create stage sections
-                for (const [stage, group] of Object.entries(stageGroups)) {
-                    if (group.items.length > 0) {
+                const stageOrder = [
+                    "beginner",
+                    "intermediate",
+                    "advanced",
+                    "other",
+                ];
+                stageOrder.forEach((stageKey) => {
+                    const group = stageGroups[stageKey];
+                    if (group.length > 0) {
                         const stageSection = document.createElement("div");
                         stageSection.className = "roadmap-stage";
-                        stageSection.dataset.stage = stage;
+                        stageSection.dataset.stage = stageKey;
 
                         const stageTitle = document.createElement("h5");
                         stageTitle.className = "roadmap-stage-title";
-                        stageTitle.textContent = group.title;
+                        // Capitalize first letter for display
+                        stageTitle.textContent =
+                            stageKey.charAt(0).toUpperCase() +
+                            stageKey.slice(1);
                         stageSection.appendChild(stageTitle);
 
                         const stageItems = document.createElement("div");
                         stageItems.className = "roadmap-stage-items";
 
-                        group.items.forEach((item) => {
+                        group.forEach((item) => {
                             const itemNode = document.createElement("div");
                             itemNode.className = "roadmap-node";
-                            itemNode.id = item.id;
+                            itemNode.id = item.id; // Use the assigned unique ID
 
-                            const title = document.createElement("h5");
-                            title.textContent = item.concept;
-
-                            const description = document.createElement("div");
-                            description.className = "roadmap-node-description";
-                            description.textContent = item.description;
-
-                            itemNode.appendChild(title);
-                            itemNode.appendChild(description);
-
-                            if (
-                                item.prerequisites &&
-                                item.prerequisites.length > 0
-                            ) {
-                                const prereq = document.createElement("div");
-                                prereq.className = "roadmap-node-prereq";
-                                prereq.innerHTML = `<strong>Prerequisites:</strong> ${item.prerequisites.join(
-                                    ", "
-                                )}`;
-                                itemNode.appendChild(prereq);
-                            }
-
+                            itemNode.innerHTML = `
+                                <h5>${marked.parseInline(
+                                    item.concept || "Unnamed Step"
+                                )}</h5>
+                                <div class="roadmap-node-description">${marked.parseInline(
+                                    item.description || ""
+                                )}</div>
+                                ${
+                                    item.prerequisites &&
+                                    item.prerequisites.length > 0
+                                        ? `
+                                <div class="roadmap-node-prereq">
+                                    <strong>Prerequisites:</strong> ${item.prerequisites.join(
+                                        ", "
+                                    )}
+                                </div>`
+                                        : ""
+                                }
+                            `;
                             stageItems.appendChild(itemNode);
                         });
-
                         stageSection.appendChild(stageItems);
                         container.appendChild(stageSection);
                     }
-                }
-
-                container.appendChild(arrowsContainer);
-
-                // Draw connections after elements are rendered
-                setTimeout(() => {
-                    drawRoadmapConnections(roadmapData, arrowsSvg);
-                }, 100);
-            }
-
-            // Draw connections between roadmap items
-            // Replace the drawRoadmapConnections function
-            function drawRoadmapConnections(roadmapData, svg) {
-                // Clear previous connections
-                while (svg.lastChild) {
-                    if (svg.lastChild.tagName !== "defs") {
-                        svg.removeChild(svg.lastChild);
-                    } else {
-                        break;
-                    }
-                }
-
-                // Create map of concept names to IDs
-                const conceptToId = {};
-                roadmapData.forEach((item) => {
-                    conceptToId[item.concept] = item.id;
                 });
 
-                // Set svg dimensions first
-                svg.setAttribute(
-                    "width",
-                    svg.parentElement.parentElement.scrollWidth
-                );
-                svg.setAttribute(
-                    "height",
-                    svg.parentElement.parentElement.scrollHeight
-                );
+                // Append arrows container at the end, but it will be positioned absolutely
+                container.appendChild(arrowsContainer);
 
-                // Draw connections
+                // Draw connections after elements are rendered and layout is calculated
+                // Use requestAnimationFrame for better timing after layout
+                requestAnimationFrame(() => {
+                    // Use setTimeout as fallback if requestAnimationFrame isn't enough
+                    setTimeout(() => {
+                        drawRoadmapConnections(
+                            roadmapData,
+                            arrowsSvg,
+                            conceptToIdMap
+                        );
+                    }, 50); // Short delay
+                });
+            }
+
+            function drawRoadmapConnections(roadmapData, svg, conceptToIdMap) {
+                // Clear previous connections except defs
+                const children = Array.from(svg.children);
+                children.forEach((child) => {
+                    if (child.tagName.toLowerCase() !== "defs") {
+                        svg.removeChild(child);
+                    }
+                });
+
+                // Ensure the container and SVG have dimensions
+                const container = svg.parentElement.parentElement; // The .roadmap-diagram container
+                const containerRect = container.getBoundingClientRect();
+
+                if (containerRect.width === 0 || containerRect.height === 0) {
+                    console.warn(
+                        "Roadmap container has no dimensions, cannot draw arrows yet."
+                    );
+                    return; // Wait for layout
+                }
+
+                // Set SVG dimensions to match container scroll size for absolute positioning
+                svg.setAttribute("width", container.scrollWidth);
+                svg.setAttribute("height", container.scrollHeight);
+
                 roadmapData.forEach((item) => {
                     if (item.prerequisites && item.prerequisites.length > 0) {
-                        const target = document.getElementById(item.id);
-                        if (!target) return;
+                        const targetElement = document.getElementById(item.id);
+                        if (!targetElement) {
+                            console.warn(
+                                `Target element not found for ID: ${item.id}`
+                            );
+                            return;
+                        }
 
-                        const targetRect = target.getBoundingClientRect();
-                        const containerRect = document
-                            .getElementById("roadmap-diagram")
-                            .getBoundingClientRect();
+                        const targetRect =
+                            targetElement.getBoundingClientRect();
 
-                        item.prerequisites.forEach((prereq) => {
-                            const sourceId = conceptToId[prereq];
-                            if (!sourceId) return;
+                        item.prerequisites.forEach((prereqConcept) => {
+                            const sourceId = conceptToIdMap[prereqConcept];
+                            if (!sourceId) {
+                                console.warn(
+                                    `Source ID not found for prerequisite concept: ${prereqConcept}`
+                                );
+                                return;
+                            }
+                            const sourceElement =
+                                document.getElementById(sourceId);
+                            if (!sourceElement) {
+                                console.warn(
+                                    `Source element not found for ID: ${sourceId}`
+                                );
+                                return;
+                            }
 
-                            const source = document.getElementById(sourceId);
-                            if (!source) return;
+                            const sourceRect =
+                                sourceElement.getBoundingClientRect();
 
-                            const sourceRect = source.getBoundingClientRect();
-
-                            // Calculate positions relative to the container
+                            // Calculate positions relative to the SVG container's top-left corner
+                            // Adjust for container's scroll position
                             const startX =
                                 sourceRect.left +
                                 sourceRect.width / 2 -
-                                containerRect.left;
+                                containerRect.left +
+                                container.scrollLeft;
                             const startY =
-                                sourceRect.bottom - containerRect.top - 5; // Adjust starting point
+                                sourceRect.bottom -
+                                containerRect.top +
+                                container.scrollTop; // From bottom center of source
                             const endX =
                                 targetRect.left +
                                 targetRect.width / 2 -
-                                containerRect.left;
-                            const endY = targetRect.top - containerRect.top + 5; // Adjust ending point
+                                containerRect.left +
+                                container.scrollLeft;
+                            const endY =
+                                targetRect.top -
+                                containerRect.top +
+                                container.scrollTop; // To top center of target
 
-                            // Create path
+                            // Add small offsets to avoid overlapping the node itself
+                            const offsetY = 5;
+                            const adjustedStartY = startY + offsetY;
+                            const adjustedEndY = endY - offsetY;
+
+                            // Create path - simple curve or straight line depending on positions
                             const path = document.createElementNS(
                                 "http://www.w3.org/2000/svg",
                                 "path"
                             );
+                            const midY = (adjustedStartY + adjustedEndY) / 2;
 
-                            // Better control points for smoother curves
-                            const midY = (startY + endY) / 2;
-                            const distance = Math.abs(endY - startY);
-                            const curve = Math.min(distance * 0.5, 50); // Limit curve steepness
+                            // Simple vertical curve
+                            // const d = `M ${startX} ${adjustedStartY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${adjustedEndY}`;
 
-                            // Create a smoother curve path
-                            //const d = `
-                            //M ${startX} ${startY}
-                            //C ${startX} ${startY + curve},
-                            //${endX} ${endY - curve},
-                            //${endX} ${endY}
-                            //`;
-                            // In drawRoadmapConnections, replace the path calculation with:
-                            const midX = (startX + endX) / 2;
-                            const d = `M ${startX} ${startY}
-           C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                            // Smoother Bezier curve calculation
+                            const dx = endX - startX;
+                            const dy = adjustedEndY - adjustedStartY;
+                            const dr = Math.sqrt(dx * dx + dy * dy);
+                            // Adjust control points for a nice curve, especially for vertical connections
+                            const curveFactor = 0.3; // How much curve
+                            const cp1x = startX;
+                            const cp1y = adjustedStartY + dy * curveFactor;
+                            const cp2x = endX;
+                            const cp2y = adjustedEndY - dy * curveFactor;
+
+                            const d = `M ${startX},${adjustedStartY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${adjustedEndY}`;
+
                             path.setAttribute("d", d);
-
-                            // path.setAttribute("d", d);
                             path.setAttribute("class", "roadmap-arrow");
                             path.setAttribute("marker-end", "url(#arrowhead)");
 
@@ -1762,76 +2204,51 @@
                         });
                     }
                 });
+                // Update marker color based on theme
+                const theme =
+                    document.documentElement.getAttribute("data-bs-theme");
+                d3.select(svg)
+                    .select("#arrowhead path")
+                    .attr("fill", theme === "dark" ? "#666" : "#adb5bd");
             }
 
-            // Create Skills Tree visualization
-            // Replace the createSkillsTree and createConnection functions with this:
-            // Toggle between knowledge views
+            // --- View Toggles (Knowledge & Roadmap) ---
             document
                 .getElementById("knowledge-graph-btn")
                 .addEventListener("click", function () {
-                    this.classList.add("active");
-                    this.classList.remove("btn-outline-primary");
-                    this.classList.add("btn-primary");
-
-                    document
-                        .getElementById("knowledge-list-btn")
-                        .classList.remove("active");
-                    document
-                        .getElementById("knowledge-list-btn")
-                        .classList.remove("btn-primary");
-                    document
-                        .getElementById("knowledge-list-btn")
-                        .classList.add("btn-outline-primary");
-
+                    toggleActiveButton(
+                        this,
+                        document.getElementById("knowledge-list-btn")
+                    );
                     document.getElementById("knowledge-graph").style.display =
                         "block";
                     document.getElementById("knowledge-list").style.display =
                         "none";
+                    // Optional: Re-render graph if needed on toggle
+                    if (diagnosticResults?.knowledge_graph)
+                        createKnowledgeGraph(diagnosticResults.knowledge_graph);
                 });
 
             document
                 .getElementById("knowledge-list-btn")
                 .addEventListener("click", function () {
-                    this.classList.add("active");
-                    this.classList.remove("btn-outline-primary");
-                    this.classList.add("btn-primary");
-
-                    document
-                        .getElementById("knowledge-graph-btn")
-                        .classList.remove("active");
-                    document
-                        .getElementById("knowledge-graph-btn")
-                        .classList.remove("btn-primary");
-                    document
-                        .getElementById("knowledge-graph-btn")
-                        .classList.add("btn-outline-primary");
-
+                    toggleActiveButton(
+                        this,
+                        document.getElementById("knowledge-graph-btn")
+                    );
                     document.getElementById("knowledge-graph").style.display =
                         "none";
                     document.getElementById("knowledge-list").style.display =
                         "block";
                 });
 
-            // Toggle between list view and tree view
-            // Replace the existing toggle event handlers with this:
             document
                 .getElementById("list-view-btn")
                 .addEventListener("click", function () {
-                    this.classList.add("active");
-                    this.classList.remove("btn-outline-primary");
-                    this.classList.add("btn-primary");
-
-                    document
-                        .getElementById("diagram-view-btn")
-                        .classList.remove("active");
-                    document
-                        .getElementById("diagram-view-btn")
-                        .classList.remove("btn-primary");
-                    document
-                        .getElementById("diagram-view-btn")
-                        .classList.add("btn-outline-primary");
-
+                    toggleActiveButton(
+                        this,
+                        document.getElementById("diagram-view-btn")
+                    );
                     document.getElementById("roadmap-container").style.display =
                         "block";
                     document.getElementById("roadmap-diagram").style.display =
@@ -1841,204 +2258,244 @@
             document
                 .getElementById("diagram-view-btn")
                 .addEventListener("click", function () {
-                    this.classList.add("active");
-                    this.classList.remove("btn-outline-primary");
-                    this.classList.add("btn-primary");
-
-                    document
-                        .getElementById("list-view-btn")
-                        .classList.remove("active");
-                    document
-                        .getElementById("list-view-btn")
-                        .classList.remove("btn-primary");
-                    document
-                        .getElementById("list-view-btn")
-                        .classList.add("btn-outline-primary");
-
+                    toggleActiveButton(
+                        this,
+                        document.getElementById("list-view-btn")
+                    );
                     document.getElementById("roadmap-container").style.display =
                         "none";
                     document.getElementById("roadmap-diagram").style.display =
                         "block";
-
-                    // Force re-render of diagram when switching to diagram view
-                    if (diagnosticResults) {
+                    // Re-render diagram when switching to ensure arrows are drawn correctly
+                    if (diagnosticResults?.learning_roadmap) {
                         createRoadmapDiagram(
                             diagnosticResults.learning_roadmap
                         );
                     }
                 });
 
-            // Alert message functionality
-            function showAlert(message, type = "primary") {
-                const alertDiv = document.createElement("div");
-                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-                alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-
-                // Insert at the top of the current active section
-                if (
-                    document.getElementById("chat-section").style.display !==
-                    "none"
-                ) {
-                    document
-                        .getElementById("chat-section")
-                        .querySelector(".card-body")
-                        .prepend(alertDiv);
-                } else if (
-                    document.getElementById("result-container").style
-                        .display !== "none"
-                ) {
-                    document
-                        .getElementById("result-container")
-                        .querySelector(".card-body")
-                        .prepend(alertDiv);
-                } else {
-                    document
-                        .getElementById("setup-form")
-                        .querySelector(".card-body")
-                        .prepend(alertDiv);
-                }
-
-                // Auto dismiss after 5 seconds
-                setTimeout(() => {
-                    alertDiv.classList.remove("show");
-                    setTimeout(() => alertDiv.remove(), 500);
-                }, 5000);
+            function toggleActiveButton(activeBtn, inactiveBtn) {
+                activeBtn.classList.add("active", "btn-primary");
+                activeBtn.classList.remove("btn-outline-primary");
+                inactiveBtn.classList.remove("active", "btn-primary");
+                inactiveBtn.classList.add("btn-outline-primary");
             }
 
-            // Download roadmap function
+            // --- Utility Functions ---
+
+            // Handle fetch responses and basic error checking
+            async function handleFetchResponse(response) {
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg =
+                            errorData.error || errorData.message || errorMsg;
+                    } catch (e) {
+                        // If response is not JSON, use status text
+                        errorMsg = response.statusText || errorMsg;
+                    }
+                    throw new Error(errorMsg);
+                }
+                return response.json(); // Parse JSON body
+            }
+
+            // Alert message functionality
+            function showAlert(message, type = "info", duration = 5000) {
+                // Default type info
+                // Clear existing alerts of the same type quickly to avoid spamming
+                const existingAlert = alertContainer.querySelector(
+                    `.alert-${type}`
+                );
+                if (existingAlert) {
+                    existingAlert.remove();
+                }
+
+                const alertDiv = document.createElement("div");
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show m-2`; // Added margin
+                alertDiv.setAttribute("role", "alert");
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+
+                // Auto dismiss after duration
+                if (duration > 0) {
+                    setTimeout(() => {
+                        // Use Bootstrap's dismiss method if available, otherwise just remove
+                        const bsAlert = bootstrap.Alert.getInstance(alertDiv);
+                        if (bsAlert) {
+                            bsAlert.close();
+                        } else {
+                            alertDiv.classList.remove("show");
+                            // Remove element after fade out transition
+                            alertDiv.addEventListener("transitionend", () =>
+                                alertDiv.remove()
+                            );
+                        }
+                    }, duration);
+                }
+            }
+
+            // Reset functions
+            function resetChatState() {
+                chatHistory = [];
+                chatContainer.innerHTML = "";
+                sessionId = null; // Reset session ID for start
+                diagnosticResults = null;
+                isDiagnosticComplete = false;
+                userInput.disabled = false;
+                sendMessageBtn.disabled = false;
+                completeDiagnosticBtn.disabled = false;
+            }
+
+            function resetAppState() {
+                resetChatState();
+                // Reset setup form fields and stored data
+                setupData = { subject: "", goal: "", age: "", grade: "" };
+                populateSetupForm(); // Clear the form visually
+                startDiagnosticBtn.disabled = false; // Re-enable start button
+                // Clear results display (optional, handled by navigateToStage)
+                resultContainer.innerHTML = ""; // Or more specific clearing if needed
+            }
+
+            // --- Action Buttons (Results Page) ---
+
+            // Download roadmap results as JSON
             document
                 .getElementById("download-roadmap")
                 .addEventListener("click", function () {
-                    if (!diagnosticResults) return;
-
-                    // Prepare data
-                    const filename = "learning_roadmap.json";
-                    const dataStr =
-                        "data:text/json;charset=utf-8," +
-                        encodeURIComponent(
-                            JSON.stringify(diagnosticResults, null, 2)
+                    if (!diagnosticResults) {
+                        showAlert(
+                            "No results available to download.",
+                            "warning"
                         );
-
-                    // Create download link
-                    const downloadAnchorNode = document.createElement("a");
-                    downloadAnchorNode.setAttribute("href", dataStr);
-                    downloadAnchorNode.setAttribute("download", filename);
-                    document.body.appendChild(downloadAnchorNode);
-                    downloadAnchorNode.click();
-                    downloadAnchorNode.remove();
-
-                    showAlert("Roadmap downloaded successfully!", "success");
+                        return;
+                    }
+                    try {
+                        const filename = `learning_navigator_results_${
+                            sessionId || "session"
+                        }.json`;
+                        const dataStr =
+                            "data:text/json;charset=utf-8," +
+                            encodeURIComponent(
+                                JSON.stringify(diagnosticResults, null, 2)
+                            );
+                        const downloadAnchorNode = document.createElement("a");
+                        downloadAnchorNode.setAttribute("href", dataStr);
+                        downloadAnchorNode.setAttribute("download", filename);
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                        showAlert(
+                            "Results JSON downloaded successfully!",
+                            "success"
+                        );
+                    } catch (error) {
+                        console.error("Error creating download link:", error);
+                        showAlert("Failed to prepare download.", "danger");
+                    }
                 });
 
-            // Print roadmap
+            // Print page
             document
                 .getElementById("print-roadmap")
                 .addEventListener("click", function () {
                     window.print();
                 });
 
-            // New assessment button
-            document
-                .getElementById("new-assessment")
-                .addEventListener("click", function () {
-                    // Reset all sections
-                    document.getElementById("result-container").style.display =
-                        "none";
-                    document.getElementById("chat-container").innerHTML = "";
-                    document.getElementById("setup-form").style.display =
-                        "block";
-
-                    // Reset form fields
-                    document.getElementById("subject").value = "";
-                    document.getElementById("goal").value = "";
-                    document.getElementById("age").value = "";
-                    document.getElementById("grade").value = "";
-
-                    // Reset progress steps
-                    updateProgressSteps("setup");
-
-                    // Reset session data
-                    sessionId = null;
-                    diagnosticResults = null;
-                });
-
-            // Share results functionality
+            // Share results (Mock)
             document
                 .getElementById("share-results")
                 .addEventListener("click", function () {
-                    if (!diagnosticResults) return;
-
-                    // Create a shareable link (in a real app, this would create a permalink)
-                    const dummyShareUrl = `${window.location.origin}/share/${sessionId}`;
-
-                    // Use Web Share API if available
+                    if (!sessionId) {
+                        showAlert(
+                            "Cannot share results without a session ID.",
+                            "warning"
+                        );
+                        return;
+                    }
+                    const dummyShareUrl = `${window.location.origin}/shared-result/${sessionId}`; // Example URL structure
                     if (navigator.share) {
                         navigator
                             .share({
                                 title: "My Learning Roadmap",
                                 text: "Check out my personalized learning roadmap from Learning Navigator!",
-                                url: dummyShareUrl,
+                                url: dummyShareUrl, // In reality, this URL should serve the results
                             })
                             .then(() =>
-                                showAlert("Shared successfully!", "success")
-                            )
-                            .catch((error) =>
-                                console.log("Error sharing", error)
-                            );
-                    } else {
-                        // Fallback - copy to clipboard
-                        navigator.clipboard.writeText(dummyShareUrl).then(
-                            function () {
                                 showAlert(
-                                    "Share link copied to clipboard!",
+                                    "Shared successfully (mock)!",
                                     "success"
-                                );
-                            },
-                            function () {
-                                showAlert(
-                                    "Failed to copy share link.",
-                                    "danger"
-                                );
-                            }
-                        );
+                                )
+                            )
+                            .catch((error) => {
+                                console.log("Share API error:", error);
+                                // Fallback to clipboard if share fails or is cancelled
+                                copyToClipboard(dummyShareUrl);
+                            });
+                    } else {
+                        // Fallback for browsers without Share API
+                        copyToClipboard(dummyShareUrl);
                     }
                 });
 
-            // Mock PDF download (in a real app, this would generate a PDF)
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(
+                    () => {
+                        showAlert(
+                            "Share link copied to clipboard (mock)!",
+                            "success"
+                        );
+                    },
+                    (err) => {
+                        console.error("Clipboard copy failed: ", err);
+                        showAlert("Failed to copy share link.", "danger");
+                    }
+                );
+            }
+
+            // Mock PDF download
             document
                 .getElementById("download-pdf")
                 .addEventListener("click", function () {
-                    showAlert("Preparing PDF download...", "info");
-                    setTimeout(() => {
-                        showAlert("PDF downloaded successfully!", "success");
-                    }, 2000);
+                    showAlert(
+                        "Generating PDF... (This is a mock feature)",
+                        "info",
+                        3000
+                    );
+                    // In a real app, trigger server-side PDF generation or use a library like jsPDF
                 });
-            // Add this near the end of your script section
+
+            // --- Window Resize Listener ---
             let resizeTimer;
             window.addEventListener("resize", function () {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(() => {
-                    if (
-                        document.getElementById("knowledge-graph").style
-                            .display === "block" &&
-                        diagnosticResults &&
-                        diagnosticResults.knowledge_graph
-                    ) {
-                        createKnowledgeGraph(diagnosticResults.knowledge_graph);
-                    }
-                    if (
-                        document.getElementById("roadmap-diagram").style
-                            .display === "block" &&
-                        diagnosticResults
-                    ) {
-                        createRoadmapDiagram(
+                    // Re-render visualizations if they are currently visible
+                    if (currentStage === "results" && diagnosticResults) {
+                        if (
+                            document.getElementById("knowledge-graph").style
+                                .display !== "none" &&
+                            diagnosticResults.knowledge_graph
+                        ) {
+                            createKnowledgeGraph(
+                                diagnosticResults.knowledge_graph
+                            );
+                        }
+                        if (
+                            document.getElementById("roadmap-diagram").style
+                                .display !== "none" &&
                             diagnosticResults.learning_roadmap
-                        );
+                        ) {
+                            // Re-drawing the diagram also redraws arrows
+                            createRoadmapDiagram(
+                                diagnosticResults.learning_roadmap
+                            );
+                        }
                     }
-                }, 200);
+                }, 250); // Debounce resize events
             });
         </script>
     </body>
