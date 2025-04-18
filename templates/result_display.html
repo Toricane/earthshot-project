@@ -1324,10 +1324,6 @@
                 toggleActiveButton(this, document.getElementById('knowledge-list-btn'));
                 document.getElementById('knowledge-graph').style.display = 'block';
                 document.getElementById('knowledge-list').style.display = 'none';
-                // Re-create graph when switching back to ensure layout and links are correct
-                if (diagnosticResults?.knowledge_graph) {
-                    createKnowledgeGraph(diagnosticResults.knowledge_graph);
-                }
             });
 
             document.getElementById('knowledge-list-btn').addEventListener('click', function() {
@@ -1459,26 +1455,6 @@
                 // Changed to just trigger print, as PDF generation is complex client-side
                 showAlert('Use your browser\'s Print to PDF function to save as PDF.', 'info', 4000);
                 window.print();
-            });
-
-            // --- Window Resize Listener ---
-            let resizeTimer;
-            window.addEventListener('resize', function() {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(() => {
-                    console.log("Window resized, redrawing visible graphs..."); // Debug log
-                    if (diagnosticResults) {
-                        // Only redraw graphs if they are currently visible
-                        if (document.getElementById('knowledge-graph').style.display !== 'none' && diagnosticResults.knowledge_graph) {
-                            console.log("Redrawing Knowledge Graph due to resize.");
-                            createKnowledgeGraph(diagnosticResults.knowledge_graph);
-                        }
-                        if (document.getElementById('roadmap-diagram').style.display !== 'none' && diagnosticResults.learning_roadmap) {
-                            console.log("Redrawing Roadmap Diagram due to resize.");
-                            createRoadmapDiagram(diagnosticResults.learning_roadmap);
-                        }
-                    }
-                }, 250); // Debounce resize events
             });
         </script>
     </body>
