@@ -1,3 +1,5 @@
+--- START OF FILE result_display.html ---
+
 <!-- START OF FILE result_display.html -->
 
 <!DOCTYPE html>
@@ -324,13 +326,13 @@
 
             .link {
                 fill: none;
-                stroke: #ccc;
-                stroke-width: 1.5px;
-                transition: stroke 0.2s;
+                /* stroke: #ccc; */ /* Style set in JS */
+                /* stroke-width: 1.5px; */ /* Style set in JS */
+                /* transition: stroke 0.2s; */ /* Transition removed for stability */
             }
-            [data-bs-theme="dark"] .link {
-                stroke: #555;
-            }
+            /* [data-bs-theme="dark"] .link { */
+            /* stroke: #555; */ /* Style set in JS */
+            /* } */
 
             .node-tooltip {
                 position: absolute;
@@ -840,12 +842,14 @@
                     themeLabel.textContent = 'Dark Mode';
                     localStorage.setItem('theme', 'light');
                 }
-                // Re-render graphs if visible
+                // Re-render graphs if visible to apply theme changes
                 if (diagnosticResults) {
                      if (document.getElementById('knowledge-graph').style.display !== 'none') {
+                        // Graph needs full redraw for theme changes in nodes/links/text
                         createKnowledgeGraph(diagnosticResults.knowledge_graph);
                      }
                      if (document.getElementById('roadmap-diagram').style.display !== 'none') {
+                        // Roadmap diagram also needs redraw for theme changes
                         createRoadmapDiagram(diagnosticResults.learning_roadmap);
                      }
                 }
@@ -863,7 +867,8 @@
                         const messageDiv = document.createElement('div');
                         messageDiv.className = `message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`;
                         // Use marked.parse() - ensure it's configured to sanitize if needed, or trust the source
-                        messageDiv.innerHTML = marked.parse(message.content || '*No content*');
+                        // Added check for null/undefined content
+                        messageDiv.innerHTML = marked.parse(message.content || '*No content provided*');
                         conversationContainer.appendChild(messageDiv);
                     });
                 } else {
@@ -879,20 +884,20 @@
                 // Populate strengths
                 const strengthsList = document.getElementById('strengths-list');
                 strengthsList.innerHTML = results.diagnostic_summary?.strengths?.length > 0
-                    ? results.diagnostic_summary.strengths.map(s => `<li class="list-group-item">${marked.parseInline(s)}</li>`).join('')
+                    ? results.diagnostic_summary.strengths.map(s => `<li class="list-group-item">${marked.parseInline(s || '')}</li>`).join('') // Added check for null s
                     : '<li class="list-group-item text-muted">No specific strengths identified.</li>';
 
                 // Populate gaps
                 const gapsList = document.getElementById('gaps-list');
                 gapsList.innerHTML = results.diagnostic_summary?.gaps?.length > 0
-                    ? results.diagnostic_summary.gaps.map(g => `<li class="list-group-item">${marked.parseInline(g)}</li>`).join('')
+                    ? results.diagnostic_summary.gaps.map(g => `<li class="list-group-item">${marked.parseInline(g || '')}</li>`).join('') // Added check for null g
                     : '<li class="list-group-item text-muted">No specific areas for improvement identified.</li>';
 
                 // Create Knowledge Graph & List
                 if (results.knowledge_graph && results.knowledge_graph.nodes) {
-                    createKnowledgeGraph(results.knowledge_graph);
-                    createKnowledgeList(results.knowledge_graph);
-                    document.getElementById('knowledge-graph').style.display = 'block';
+                    createKnowledgeGraph(results.knowledge_graph); // Create graph first
+                    createKnowledgeList(results.knowledge_graph); // Then list
+                    document.getElementById('knowledge-graph').style.display = 'block'; // Show graph by default
                     document.getElementById('knowledge-list').style.display = 'none';
                     document.getElementById('knowledge-graph-btn').classList.add('active', 'btn-primary');
                     document.getElementById('knowledge-graph-btn').classList.remove('btn-outline-primary');
@@ -907,7 +912,7 @@
                 const roadmapContainer = document.getElementById('roadmap-container');
                 if (results.learning_roadmap && results.learning_roadmap.length > 0) {
                     roadmapContainer.innerHTML = results.learning_roadmap.map((item, index) => `
-                        <div class="roadmap-item" data-id="${item.id || index}">
+                        <div class="roadmap-item" data-id="${item.id || `roadmap-item-${index}`}"> <!-- Ensure unique ID -->
                             <h5>${index + 1}. ${marked.parseInline(item.concept || 'Unnamed Step')}</h5>
                             <p>${marked.parseInline(item.description || '')}</p>
                             <p class="mb-1"><strong>Prerequisites:</strong> ${item.prerequisites?.join(', ') || 'None'}</p>
@@ -915,9 +920,9 @@
                         </div>
                     `).join('');
 
-                    // Create Roadmap Diagram View
+                    // Create Roadmap Diagram View (but keep it hidden initially)
                     createRoadmapDiagram(results.learning_roadmap);
-                    document.getElementById('roadmap-container').style.display = 'block';
+                    document.getElementById('roadmap-container').style.display = 'block'; // Show list view by default
                     document.getElementById('roadmap-diagram').style.display = 'none';
                     document.getElementById('list-view-btn').classList.add('active', 'btn-primary');
                     document.getElementById('list-view-btn').classList.remove('btn-outline-primary');
@@ -931,23 +936,24 @@
                 // Populate recommendations
                 const recommendationsList = document.getElementById('recommendations-list');
                 recommendationsList.innerHTML = results.recommendations?.length > 0
-                    ? results.recommendations.map(r => `<li class="list-group-item">${marked.parse(r)}</li>`).join('')
+                    ? results.recommendations.map(r => `<li class="list-group-item">${marked.parse(r || '')}</li>`).join('') // Added check for null r
                     : '<li class="list-group-item text-muted">No specific recommendations provided.</li>';
 
                 // Populate interests
                 document.getElementById('interests-display').textContent = results.user_interests?.join(', ') || 'No specific interests recorded.';
             }
 
-            // --- d3 Visualizations (Copied from index.html, ensure they work standalone) ---
+            // --- d3 Visualizations ---
 
             function createKnowledgeGraph(knowledgeData) {
                 const graphContainer = d3.select("#knowledge-graph");
-                graphContainer.html(""); // Clear previous graph
+                graphContainer.html(""); // Clear previous graph - NECESSARY for resize/theme changes
 
                 if (!knowledgeData || !knowledgeData.nodes || knowledgeData.nodes.length === 0) {
                     graphContainer.append("div").attr("class", "text-center text-muted py-5").text("No knowledge data available for map view.");
                     return;
                 }
+                console.log("Creating knowledge graph..."); // Debug log
 
                 const tooltip = graphContainer.append("div").attr("class", "node-tooltip").style("opacity", 0);
                 const width = graphContainer.node().getBoundingClientRect().width;
@@ -962,17 +968,22 @@
 
                 const g = svg.append("g");
 
+                // Define zoom AFTER svg is created
                 const zoom = d3.zoom().scaleExtent([0.3, 4]).on("zoom", (event) => {
                     g.attr("transform", event.transform);
-                    g.selectAll("circle").attr("stroke-width", 2 / event.transform.k);
+                    // Adjust stroke width based on zoom ONLY for elements that need it (like nodes)
+                    g.selectAll(".node circle").attr("stroke-width", 2 / event.transform.k);
+                    // Links might not need zoom-adjusted width, or use a different factor
                     g.selectAll(".link").attr("stroke-width", 1.5 / event.transform.k);
                 });
-                svg.call(zoom);
+                svg.call(zoom); // Apply zoom to svg
 
+                // Filter links to ensure both source and target nodes exist
+                const nodeIds = new Set(knowledgeData.nodes.map(n => n.id));
                 const validLinks = (knowledgeData.links || []).filter(link =>
-                    knowledgeData.nodes.find(n => n.id === link.source) &&
-                    knowledgeData.nodes.find(n => n.id === link.target)
+                    nodeIds.has(link.source) && nodeIds.has(link.target)
                 );
+                console.log(`Found ${knowledgeData.nodes.length} nodes, ${validLinks.length} valid links.`); // Debug log
 
                 const simulation = d3.forceSimulation(knowledgeData.nodes)
                     .force("link", d3.forceLink(validLinks).id(d => d.id).distance(100).strength(0.5))
@@ -985,14 +996,14 @@
                 svg.append("defs").append("marker")
                     .attr("id", "knowledge-arrow")
                     .attr("viewBox", "0 -5 10 10")
-                    .attr("refX", 25)
+                    .attr("refX", 25) // Adjusted refX based on node radius + desired gap
                     .attr("refY", 0)
                     .attr("markerWidth", 5)
                     .attr("markerHeight", 5)
                     .attr("orient", "auto")
                     .append("path")
                     .attr("d", "M0,-5L10,0L0,5")
-                    .attr("fill", "#999");
+                    .attr("fill", "#999"); // Initial fill, might be overridden by resetHighlighting
 
                 const link = g.append("g").attr("class", "links")
                     .selectAll("line").data(validLinks).join("line")
@@ -1007,7 +1018,7 @@
 
                 node.append("circle")
                     .attr("r", 14)
-                    .attr("class", d => `node-proficiency-${d.proficiency || "low"}`)
+                    .attr("class", d => `node-proficiency-${d.proficiency || "low"}`) // Apply proficiency class
                     .on("mouseover", function(event, d) {
                         tooltip.transition().duration(200).style("opacity", 0.9);
                         tooltip.html(`<strong>${d.name || "Unnamed"}</strong><br>${d.description || "No description."}<br><em>Proficiency: ${d.proficiency || "Unknown"}</em>`);
@@ -1027,48 +1038,70 @@
                     .text(d => d.name || "Unnamed");
 
                 simulation.on("tick", () => {
+                    // Update link positions
                     link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
                         .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                    // Update node positions
                     node.attr("transform", d => `translate(${d.x},${d.y})`);
                 });
 
-                // Initial theme application for links
+                // Call resetHighlighting AFTER simulation setup and tick handler attachment
+                // This ensures initial styles are applied correctly.
                 resetHighlighting(node, link, svg);
             }
 
-            function drag(simulation) { /* Drag functions remain the same */
+            function drag(simulation) {
                 function dragstarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
                 function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
                 function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
                 return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
             }
 
-            function highlightConnections(selectedNode, allNodes, allLinks, svg) { /* Highlighting logic remains the same */
+            function highlightConnections(selectedNode, allNodes, allLinks, svg) {
                 const connectedNodeIds = new Set(); connectedNodeIds.add(selectedNode.id);
-                const currentZoom = d3.zoomTransform(svg.node()).k;
+                const currentZoom = d3.zoomTransform(svg.node()).k || 1; // Ensure zoom is at least 1
+
                 allLinks.each(function(l) {
                     const linkElement = d3.select(this);
-                    if (l.source.id === selectedNode.id || l.target.id === selectedNode.id) {
-                        linkElement.transition().duration(150).attr("stroke", "#f00").attr("stroke-opacity", 1).attr("stroke-width", 2 / currentZoom);
-                        connectedNodeIds.add(l.source.id); connectedNodeIds.add(l.target.id);
+                    // Check if source/target are objects with id (they should be after simulation runs)
+                    const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+
+                    if (sourceId === selectedNode.id || targetId === selectedNode.id) {
+                        linkElement.transition().duration(150)
+                           .attr("stroke", "#f00") // Highlight color
+                           .attr("stroke-opacity", 1)
+                           .attr("stroke-width", (2 / currentZoom)); // Make highlighted links thicker
+                        connectedNodeIds.add(sourceId);
+                        connectedNodeIds.add(targetId);
                     } else {
-                        linkElement.transition().duration(150).attr("stroke-opacity", 0.2);
+                        linkElement.transition().duration(150).attr("stroke-opacity", 0.2); // Fade out non-connected
                     }
                 });
                 allNodes.each(function(n) {
                     const nodeElement = d3.select(this);
-                    nodeElement.transition().duration(150).style("opacity", connectedNodeIds.has(n.id) ? 1 : 0.3);
+                    nodeElement.transition().duration(150).style("opacity", connectedNodeIds.has(n.id) ? 1 : 0.3); // Fade non-connected nodes
                 });
             }
 
-            function resetHighlighting(allNodes, allLinks, svg) { /* Reset highlighting logic remains the same */
-                const currentZoom = d3.zoomTransform(svg.node()).k;
+            function resetHighlighting(allNodes, allLinks, svg) {
+                const currentZoom = d3.zoomTransform(svg.node()).k || 1; // Ensure zoom is at least 1
                 const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-                allNodes.transition().duration(200).style("opacity", 1);
-                allLinks.transition().duration(200)
-                    .attr("stroke", isDark ? "#555" : "#ccc")
+                const linkColor = isDark ? "#555" : "#ccc";
+                const markerColor = isDark ? "#666" : "#999"; // Adjust marker color too
+
+                allNodes.transition().duration(200).style("opacity", 1); // Reset node opacity
+
+                // *** FIX: Apply styles directly without transition for links ***
+                // Transitions on links immediately after creation/simulation start
+                // can be unreliable and cause visibility issues.
+                allLinks //.transition().duration(200) // REMOVED transition
+                    .attr("stroke", linkColor)
                     .attr("stroke-opacity", 0.7)
-                    .attr("stroke-width", 1.5 / currentZoom);
+                    .attr("stroke-width", 1.5 / currentZoom); // Reset link style directly
+
+                // Update marker color based on theme
+                svg.select("#knowledge-arrow path").attr("fill", markerColor);
             }
 
 
@@ -1117,14 +1150,22 @@
                     container.innerHTML = "<p class='text-center text-muted py-5'>No roadmap data available for diagram view.</p>";
                     return;
                 }
+                console.log("Creating roadmap diagram..."); // Debug log
 
                 const stageGroups = { beginner: [], intermediate: [], advanced: [], other: [] };
                 const conceptToIdMap = {};
                 let idCounter = 0;
 
+                // Ensure unique IDs and map concepts to IDs
                 roadmapData.forEach((item, index) => {
-                    if (!item.id || conceptToIdMap[item.concept]) { item.id = `roadmap-node-${idCounter++}`; }
+                    // Assign a unique ID if missing or if concept name is duplicated (simple approach)
+                    if (!item.id || conceptToIdMap[item.concept]) {
+                         item.id = `roadmap-node-${item.concept ? item.concept.replace(/\s+/g, '-') : ''}-${idCounter++}`;
+                    }
+                    // Ensure ID is valid for DOM querySelector
+                    item.id = item.id.replace(/[^a-zA-Z0-9-_]/g, '_'); // Sanitize ID
                     conceptToIdMap[item.concept] = item.id;
+
                     const stage = item.stage?.toLowerCase() || 'other';
                     (stageGroups[stage] || stageGroups.other).push(item);
                 });
@@ -1138,14 +1179,14 @@
                 const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
                 marker.setAttribute('id', 'arrowhead');
                 marker.setAttribute('viewBox', '0 -5 10 10');
-                marker.setAttribute('refX', '8');
+                marker.setAttribute('refX', '8'); // Arrow tip position relative to end of line
                 marker.setAttribute('refY', '0');
                 marker.setAttribute('markerWidth', '5');
                 marker.setAttribute('markerHeight', '5');
-                marker.setAttribute('orient', 'auto');
+                marker.setAttribute('orient', 'auto-start-reverse'); // Ensures arrow points correctly
                 const pathMarker = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 pathMarker.setAttribute('d', 'M0,-5L10,0L0,5');
-                pathMarker.setAttribute('fill', '#adb5bd');
+                // pathMarker.setAttribute('fill', '#adb5bd'); // Color set in drawRoadmapConnections
                 marker.appendChild(pathMarker);
                 defs.appendChild(marker);
                 arrowsSvg.appendChild(defs);
@@ -1166,7 +1207,7 @@
                         group.forEach(item => {
                             const itemNode = document.createElement('div');
                             itemNode.className = 'roadmap-node';
-                            itemNode.id = item.id;
+                            itemNode.id = item.id; // Use the generated/sanitized ID
                             itemNode.innerHTML = `
                                 <h5>${marked.parseInline(item.concept || 'Unnamed Step')}</h5>
                                 <div class="roadmap-node-description">${marked.parseInline(item.description || '')}</div>
@@ -1182,68 +1223,99 @@
                     }
                 });
 
-                container.appendChild(arrowsContainer);
+                container.appendChild(arrowsContainer); // Add arrows container last
 
+                // Use requestAnimationFrame to ensure layout is calculated before drawing arrows
                 requestAnimationFrame(() => {
+                    // A small timeout can sometimes help ensure elements are fully rendered
                     setTimeout(() => {
                         drawRoadmapConnections(roadmapData, arrowsSvg, conceptToIdMap);
-                    }, 50);
+                    }, 100); // Increased timeout slightly
                 });
             }
 
             function drawRoadmapConnections(roadmapData, svg, conceptToIdMap) {
-                const children = Array.from(svg.children);
-                children.forEach(child => { if (child.tagName.toLowerCase() !== 'defs') { svg.removeChild(child); } });
+                // Clear only paths, keep defs
+                d3.select(svg).selectAll('path:not(defs path)').remove();
 
-                const container = svg.parentElement.parentElement;
+                const container = svg.parentElement.parentElement; // The main roadmap-diagram container
                 const containerRect = container.getBoundingClientRect();
-                if (containerRect.width === 0 || containerRect.height === 0) { return; }
+                if (containerRect.width === 0 || containerRect.height === 0) {
+                    console.warn("Roadmap container has zero dimensions, cannot draw arrows.");
+                    return;
+                 } // Don't draw if container isn't visible
 
                 svg.setAttribute('width', container.scrollWidth);
                 svg.setAttribute('height', container.scrollHeight);
 
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                const arrowColor = isDark ? "#666" : "#adb5bd";
+                d3.select(svg).select('#arrowhead path').attr('fill', arrowColor); // Set marker color
+
                 roadmapData.forEach(item => {
                     if (item.prerequisites && item.prerequisites.length > 0) {
                         const targetElement = document.getElementById(item.id);
-                        if (!targetElement) return;
+                        if (!targetElement) {
+                            console.warn(`Target element not found for ID: ${item.id}`);
+                            return;
+                        }
                         const targetRect = targetElement.getBoundingClientRect();
 
                         item.prerequisites.forEach(prereqConcept => {
                             const sourceId = conceptToIdMap[prereqConcept];
-                            if (!sourceId) return;
+                            if (!sourceId) {
+                                console.warn(`Source ID not found for concept: ${prereqConcept}`);
+                                return;
+                            }
                             const sourceElement = document.getElementById(sourceId);
-                            if (!sourceElement) return;
+                            if (!sourceElement) {
+                                console.warn(`Source element not found for ID: ${sourceId}`);
+                                return;
+                            }
                             const sourceRect = sourceElement.getBoundingClientRect();
 
+                            // Calculate coordinates relative to the SVG container
                             const startX = sourceRect.left + sourceRect.width / 2 - containerRect.left + container.scrollLeft;
-                            const startY = sourceRect.bottom - containerRect.top + container.scrollTop;
+                            const startY = sourceRect.bottom - containerRect.top + container.scrollTop; // From bottom of source
                             const endX = targetRect.left + targetRect.width / 2 - containerRect.left + container.scrollLeft;
-                            const endY = targetRect.top - containerRect.top + container.scrollTop;
+                            const endY = targetRect.top - containerRect.top + container.scrollTop; // To top of target
 
-                            const offsetY = 5;
+                            const offsetY = 10; // Add vertical gap between node and arrow start/end
                             const adjustedStartY = startY + offsetY;
                             const adjustedEndY = endY - offsetY;
+
+                            // Ensure start/end points are valid numbers
+                            if (isNaN(startX) || isNaN(adjustedStartY) || isNaN(endX) || isNaN(adjustedEndY)) {
+                                console.warn("Invalid coordinates for arrow:", item.concept, prereqConcept);
+                                return;
+                            }
 
                             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                             const dx = endX - startX;
                             const dy = adjustedEndY - adjustedStartY;
-                            const curveFactor = 0.3;
-                            const cp1x = startX;
-                            const cp1y = adjustedStartY + dy * curveFactor;
-                            const cp2x = endX;
-                            const cp2y = adjustedEndY - dy * curveFactor;
-                            const d = `M ${startX},${adjustedStartY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${adjustedEndY}`;
+
+                            // Simple straight line or curved path
+                            let d;
+                            if (Math.abs(dx) < 5 && dy > 0) { // Mostly vertical connection
+                                d = `M ${startX},${adjustedStartY} L ${endX},${adjustedEndY}`;
+                            } else { // Use a curve for non-vertical
+                                const curveFactor = 0.4; // Adjust for more/less curve
+                                const cp1x = startX;
+                                const cp1y = adjustedStartY + dy * curveFactor;
+                                const cp2x = endX;
+                                const cp2y = adjustedEndY - dy * curveFactor;
+                                d = `M ${startX},${adjustedStartY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${adjustedEndY}`;
+                            }
+
 
                             path.setAttribute('d', d);
                             path.setAttribute('class', 'roadmap-arrow');
+                            path.setAttribute('stroke', arrowColor); // Set color directly
                             path.setAttribute('marker-end', 'url(#arrowhead)');
                             svg.appendChild(path);
                         });
                     }
                 });
-                // Update marker color based on theme
-                const theme = document.documentElement.getAttribute('data-bs-theme');
-                d3.select(svg).select('#arrowhead path').attr('fill', theme === 'dark' ? '#666' : '#adb5bd');
             }
 
 
@@ -1252,13 +1324,17 @@
                 toggleActiveButton(this, document.getElementById('knowledge-list-btn'));
                 document.getElementById('knowledge-graph').style.display = 'block';
                 document.getElementById('knowledge-list').style.display = 'none';
-                if (diagnosticResults?.knowledge_graph) createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                // Re-create graph when switching back to ensure layout and links are correct
+                if (diagnosticResults?.knowledge_graph) {
+                    createKnowledgeGraph(diagnosticResults.knowledge_graph);
+                }
             });
 
             document.getElementById('knowledge-list-btn').addEventListener('click', function() {
                 toggleActiveButton(this, document.getElementById('knowledge-graph-btn'));
                 document.getElementById('knowledge-graph').style.display = 'none';
                 document.getElementById('knowledge-list').style.display = 'block';
+                // No need to recreate list view, it's static HTML
             });
 
             document.getElementById('list-view-btn').addEventListener('click', function() {
@@ -1271,6 +1347,7 @@
                 toggleActiveButton(this, document.getElementById('list-view-btn'));
                 document.getElementById('roadmap-container').style.display = 'none';
                 document.getElementById('roadmap-diagram').style.display = 'block';
+                // Re-create diagram when switching to it to ensure arrows are drawn correctly
                 if (diagnosticResults?.learning_roadmap) {
                     createRoadmapDiagram(diagnosticResults.learning_roadmap);
                 }
@@ -1285,8 +1362,13 @@
 
             // --- Utility Functions ---
             function showAlert(message, type = 'info', duration = 5000) {
+                // Clear existing alerts of the same type to prevent stacking
                 const existingAlert = alertContainer.querySelector(`.alert-${type}`);
-                if (existingAlert) { existingAlert.remove(); }
+                if (existingAlert) {
+                    const bsExistingAlert = bootstrap.Alert.getInstance(existingAlert);
+                    if (bsExistingAlert) { bsExistingAlert.close(); }
+                    else { existingAlert.remove(); } // Fallback removal
+                 }
 
                 const alertDiv = document.createElement('div');
                 alertDiv.className = `alert alert-${type} alert-dismissible fade show m-2`;
@@ -1298,7 +1380,7 @@
                     setTimeout(() => {
                         const bsAlert = bootstrap.Alert.getInstance(alertDiv);
                         if (bsAlert) { bsAlert.close(); }
-                        else { alertDiv.remove(); }
+                        else { alertDiv.remove(); } // Fallback removal
                     }, duration);
                 }
             }
@@ -1358,11 +1440,17 @@
                         url: shareUrl,
                     }).then(() => showAlert('Shared successfully!', 'success'))
                       .catch((error) => {
-                          console.log('Share API error:', error);
-                          // Fallback to clipboard if share fails or is cancelled
-                          copyToClipboard(shareUrl);
+                          // Ignore AbortError if user cancels share dialog
+                          if (error.name !== 'AbortError') {
+                             console.error('Share API error:', error);
+                             showAlert('Could not share using system dialog. Link copied instead.', 'info');
+                             copyToClipboard(shareUrl); // Fallback to clipboard
+                          } else {
+                             console.log('Share cancelled by user.');
+                          }
                       });
                 } else {
+                    showAlert('Share API not supported. Link copied instead.', 'info');
                     copyToClipboard(shareUrl); // Fallback for browsers without Share API
                 }
             });
@@ -1378,16 +1466,22 @@
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(() => {
+                    console.log("Window resized, redrawing visible graphs..."); // Debug log
                     if (diagnosticResults) {
+                        // Only redraw graphs if they are currently visible
                         if (document.getElementById('knowledge-graph').style.display !== 'none' && diagnosticResults.knowledge_graph) {
+                            console.log("Redrawing Knowledge Graph due to resize.");
                             createKnowledgeGraph(diagnosticResults.knowledge_graph);
                         }
                         if (document.getElementById('roadmap-diagram').style.display !== 'none' && diagnosticResults.learning_roadmap) {
+                            console.log("Redrawing Roadmap Diagram due to resize.");
                             createRoadmapDiagram(diagnosticResults.learning_roadmap);
                         }
                     }
-                }, 250);
+                }, 250); // Debounce resize events
             });
         </script>
     </body>
 </html>
+
+--- END OF FILE result_display.html ---
