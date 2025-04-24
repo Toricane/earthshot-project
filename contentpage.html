@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LYCEUM</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f7f9fc;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Header with logo and icons */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      margin-bottom: 30px;
+    }
+    
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #7161EF;
+    }
+    
+    .header-icons {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f1eeff;
+      color: #7161EF;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .header-icon:hover {
+      background-color: #7161EF;
+      color: white;
+    }
+    
+    /* Content sections */
+    .page-section {
+      display: none;
+    }
+    
+    #videos-section {
+      display: block; /* Show videos section by default */
+    }
+    
+    /* Main navigation tabs above video */
+    .main-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    
+    .main-tab {
+      padding: 10px 20px;
+      background-color: #f1f3f5;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid #e1e5eb;
+      border-bottom: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .main-tab.active {
+      background-color: #7161EF;
+      color: white;
+      border-color: #7161EF;
+    }
+    
+    .main-tab:hover:not(.active) {
+      background-color: #f1eeff;
+    }
+    
+    /* Content layout */
+    .content {
+      display: flex;
+      gap: 30px;
+    }
+    
+    /* Skills tree sidebar */
+    .skills-section {
+      margin-top: 20px;
+    }
+    
+    .skills-title {
+      font-weight: 600;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    
+    .skill-tree-map {
+      width: 280px;
+      height: 280px;
+      background-color: #f8faff;
+      border-radius: 50%;
+      position: relative;
+      border: 1px solid #e1e5eb;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .skill-tree-map:hover {
+      box-shadow: 0 0 20px rgba(113, 97, 239, 0.2);
+      transform: scale(1.02);
+    }
+    
+    .skill-node {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #dde1e6;
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .skill-node.completed {
+      background-color: #2ecc71;
+      color: white;
+    }
+    
+    .skill-node.active {
+      background-color: #7161EF;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(113, 97, 239, 0.3);
+    }
+    
+    .skill-line {
+      height: 2px;
+      background-color: #dde1e6;
+      position: absolute;
+      transform-origin: left center;
+    }
+    
+    .skill-line.completed {
+      background-color: #2ecc71;
+    }
+    
+    /* Video section */
+    .video-section {
+      flex: 1;
+    }
+    
+    /* Video container */
+    .video-container {
+      width: 100%;
+      height: 0;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      position: relative;
+      margin-bottom: 20px;
+      background-color: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .video-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 20px;
+    }
+    
+    /* Buttons */
+    .button {
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .primary-button {
+      background-color: #7161EF;
+      color: white;
+    }
+    
+    .primary-button:hover {
+      background-color: #5d4fd7;
+    }
+    
+    .secondary-button {
+      background-color: #f1f3f5;
+    }
+    
+    /* Timestamps */
+    .timestamps-container {
+      margin-top: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .timestamps-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .timestamps-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+    }
+    
+    .timestamp {
+      padding: 8px 16px;
+      background-color: #f1f3f5;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .timestamp:hover {
+      background-color: #f1eeff;
+    }
+    
+    .timestamp.active {
+      background-color: #7161EF;
+      color: white;
+    }
+    
+    /* Notes section */
+    .notes-section {
+      margin-top: 30px;
+    }
+    
+    .notes-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    .notes-textarea {
+      width: 100%;
+      height: 200px;
+      padding: 15px;
+      border: 1px solid #e1e5eb;
+      border-radius: 8px;
+      resize: vertical;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    
+    .save-notes-btn {
+      padding: 8px 16px;
+      background-color: #7161EF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .save-notes-btn:hover {
+      background-color: #5d4fd7;
+    }
+    
+    /* Skills fullpage */
+    #skills-fullpage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      z-index: 100;
+      padding: 30px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    .skills-fullpage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    .skills-fullpage-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .close-fullpage-btn {
+      padding: 8px 16px;
+      background-color: #f1f3f5;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .close-fullpage-btn:hover {
+      background-color: #e9f0ff;
+    }
+    
+    .skills-fullpage-map {
+      width: 600px;
+      height: 600px;
+      background-color: #f8faff;
+      border-radius: 50%;
+      position: relative;
+      border: 1px solid #e1e5eb;
+      margin: 0 auto 40px;
+    }
+    
+    #skills-fullpage .skill-node.active {
+      background-color: #7161EF;
+      box-shadow: 0 0 0 6px rgba(113, 97, 239, 0.3);
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .content {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header with logo and icons -->
+    <header>
+      <div class="logo">LYCEUM</div>
+      <div class="header-icons">
+        <div class="header-icon profile-header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="header-icon skills-header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Videos section -->
+    <div class="page-section" id="videos-section">
+      <div class="content">
+        <!-- Left sidebar with skill tree -->
+        <div style="width: 300px;">
+          <div class="skills-section">
+            <div class="skills-title">Skills</div>
+            
+            <!-- Clickable skill tree map -->
+            <div class="skill-tree-map" id="skill-tree-map">
+              <!-- Circular skill map with nodes positioned in a more natural layout -->
+              <div class="skill-node completed" style="top: 120px; left: 120px;">1</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 150px; transform: rotate(30deg);"></div>
+              <div class="skill-node completed" style="top: 160px; left: 200px;">2</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 200px; transform: rotate(-45deg);"></div>
+              <div class="skill-node active" style="top: 90px; left: 200px;">3</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 215px; transform: rotate(70deg);"></div>
+              <div class="skill-node" style="top: 220px; left: 240px;">4</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 170px; transform: rotate(180deg);"></div>
+              <div class="skill-node" style="top: 200px; left: 110px;">5</div>
+              <div class="skill-line" style="width: 70px; top: 190px; left: 80px; transform: rotate(-45deg);"></div>
+              <div class="skill-node" style="top: 140px; left: 50px;">6</div>
+              <div class="skill-line" style="width: 70px; top: 110px; left: 80px; transform: rotate(45deg);"></div>
+              <div class="skill-node" style="top: 60px; left: 120px;">7</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right side content area -->
+        <div class="video-section">
+          <!-- Tab navigation directly above video -->
+          <div class="main-tabs" style="margin-top: 0;">
+            <div class="main-tab active" id="videos-btn">Videos</div>
+            <div class="main-tab" id="textbook-btn">Textbook</div>
+            <div class="main-tab" id="practice-btn">Practice</div>
+          </div>
+          
+          <!-- Video container with Manim overlay -->
+          <div class="video-container">
+            <div class="video-overlay">
+              <video width="100%" height="100%" poster="/api/placeholder/800/450" controls>
+                <source src="https://cdn.lms.example.com/linear-algebra-vectors.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+          
+          <!-- Video timestamps toggle -->
+          <div class="timestamps-container">
+            <div class="timestamps-header" style="display: flex; align-items: center; margin-bottom: 10px; cursor: pointer;" id="timestamps-toggle-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="timestamp-arrow" id="timestamp-arrow" style="transition: transform 0.2s ease; transform: rotate(-90deg);">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                <div class="timestamps-title">Video Timestamps</div>
+              </div>
+            </div>
+            <div id="timestamps-list" class="timestamps-list">
+              <div class="timestamp active">0:00 Introduction</div>
+              <div class="timestamp">2:15 Vector Basics</div>
+              <div class="timestamp">5:42 Vector Addition</div>
+              <div class="timestamp">8:30 Scalar Multiplication</div>
+              <div class="timestamp">12:17 Vector Spaces</div>
+              <div class="timestamp">18:43 Linear Independence</div>
+            </div>
+          </div>
+          
+          <!-- Notes textarea for user input -->
+          <div class="notes-section">
+            <div class="notes-title">Your Notes</div>
+            <textarea class="notes-textarea" placeholder="Take your notes here..."></textarea>
+            <div style="display: flex; justify-content: flex-end;">
+              <button class="save-notes-btn">Save Notes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Textbook section -->
+    <div class="page-section" id="textbook-section">
+      <div class="content">
+        <!-- Left sidebar with skill tree -->
+        <div style="width: 300px;">
+          <div class="skills-section">
+            <div class="skills-title">Skills</div>
+            
+            <!-- Clickable skill tree map -->
+            <div class="skill-tree-map" id="skill-tree-map-textbook">
+              <!-- Circular skill map with nodes positioned in a more natural layout -->
+              <div class="skill-node completed" style="top: 120px; left: 120px;">1</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 150px; transform: rotate(30deg);"></div>
+              <div class="skill-node completed" style="top: 160px; left: 200px;">2</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 200px; transform: rotate(-45deg);"></div>
+              <div class="skill-node active" style="top: 90px; left: 200px;">3</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 215px; transform: rotate(70deg);"></div>
+              <div class="skill-node" style="top: 220px; left: 240px;">4</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 170px; transform: rotate(180deg);"></div>
+              <div class="skill-node" style="top: 200px; left: 110px;">5</div>
+              <div class="skill-line" style="width: 70px; top: 190px; left: 80px; transform: rotate(-45deg);"></div>
+              <div class="skill-node" style="top: 140px; left: 50px;">6</div>
+              <div class="skill-line" style="width: 70px; top: 110px; left: 80px; transform: rotate(45deg);"></div>
+              <div class="skill-node" style="top: 60px; left: 120px;">7</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right side content area -->
+        <div style="flex: 1;">
+          <!-- Tab navigation directly above content -->
+          <div class="main-tabs" style="margin-top: 0;">
+            <div class="main-tab" id="videos-btn-textbook">Videos</div>
+            <div class="main-tab active" id="textbook-btn-textbook">Textbook</div>
+            <div class="main-tab" id="practice-btn-textbook">Practice</div>
+          </div>
+          
+          <h2 style="margin-top: 20px; margin-bottom: 20px;">Introduction to Linear Algebra</h2>
+          
+          <div class="textbook-content-body" style="line-height: 1.7; font-size: 16px;">
+            <div class="textbook-section" style="margin-bottom: 30px; background-color: #f9fafb; padding: 25px; border-radius: 8px;">
+              <div class="textbook-section-title" style="font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #7161EF; padding-bottom: 8px;">1. Vector Basics</div>
+              <div class="textbook-section-content">
+                <p style="margin-bottom: 15px;">A vector is a mathematical object that has both magnitude and direction. In contrast, a scalar has only magnitude.</p>
+                <p style="margin-bottom: 15px;">Vectors can be represented in multiple ways:</p>
+                <ul style="margin-left: 25px; margin-bottom: 15px;">
+                  <li style="margin-bottom: 8px;">Geometrically as an arrow in a coordinate system</li>
+                  <li style="margin-bottom: 8px;">Algebraically as an ordered list of numbers</li>
+                </ul>
+                <div style="background-color: #f1eeff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                  <strong>Example:</strong> The vector v = (3, 4) has a magnitude of |v| = √(3² + 4²) = √25 = 5 and points in the direction given by arctan(4/3) ≈ 53.1° from the positive x-axis.
+                </div>
+              </div>
+            </div>
+            
+            <div class="textbook-section" style="margin-bottom: 30px; background-color: #f9fafb; padding: 25px; border-radius: 8px;">
+              <div class="textbook-section-title" style="font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #7161EF; padding-bottom: 8px;">2. Vector Addition</div>
+              <div class="textbook-section-content">
+                <p style="margin-bottom: 15px;">Vectors can be added by combining their components:</p>
+                <div style="font-family: monospace; background: #f1f3f8; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #7161EF;">v + w = (v₁ + w₁, v₂ + w₂, ..., vₙ + wₙ)</div>
+                <p style="margin-bottom: 15px;">Geometrically, vector addition follows the parallelogram law or the tip-to-tail method, where the sum of two vectors forms the diagonal of the parallelogram created by the two vectors.</p>
+                <div style="background-color: #f1eeff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                  <strong>Example:</strong> If v = (2, 3) and w = (4, 1), then v + w = (2+4, 3+1) = (6, 4)
+                </div>
+              </div>
+            </div>
+            
+            <div class="textbook-section" style="margin-bottom: 30px; background-color: #f9fafb; padding: 25px; border-radius: 8px;">
+              <div class="textbook-section-title" style="font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #7161EF; padding-bottom: 8px;">3. Scalar Multiplication</div>
+              <div class="textbook-section-content">
+                <p style="margin-bottom: 15px;">A vector can be multiplied by a scalar (a number) to change its magnitude:</p>
+                <div style="font-family: monospace; background: #f1f3f8; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #7161EF;">c · v = (c · v₁, c · v₂, ..., c · vₙ)</div>
+                <p style="margin-bottom: 15px;">If c is positive, the direction remains the same but the magnitude changes by a factor of |c|. If c is negative, the direction is reversed and the magnitude changes by a factor of |c|.</p>
+                <div style="background-color: #f1eeff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                  <strong>Example:</strong> If v = (3, -2) and c = 2, then c · v = 2 · (3, -2) = (6, -4)<br>
+                  The magnitude increases from |v| = √(3² + (-2)²) = √13 to |c·v| = √(6² + (-4)²) = √52 = 2√13
+                </div>
+              </div>
+            </div>
+            
+            <div class="textbook-section" style="margin-bottom: 30px; background-color: #f9fafb; padding: 25px; border-radius: 8px;">
+              <div class="textbook-section-title" style="font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #7161EF; padding-bottom: 8px;">4. Vector Spaces</div>
+              <div class="textbook-section-content">
+                <p style="margin-bottom: 15px;">A vector space is a collection of vectors that is closed under addition and scalar multiplication. This means that when you add two vectors from the space or multiply a vector by a scalar, the result is still in the space.</p>
+                <p style="margin-bottom: 15px;">A vector space must satisfy the following axioms:</p>
+                <ul style="margin-left: 25px; margin-bottom: 15px;">
+                  <li style="margin-bottom: 8px;">Closed under addition: u + v is in the space for any vectors u and v in the space.</li>
+                  <li style="margin-bottom: 8px;">Closed under scalar multiplication: c · v is in the space for any scalar c and any vector v in the space.</li>
+                  <li style="margin-bottom: 8px;">Commutativity of addition: u + v = v + u for all vectors u and v in the space.</li>
+                  <li style="margin-bottom: 8px;">Associativity of addition: (u + v) + w = u + (v + w) for all vectors u, v, and w in the space.</li>
+                  <li style="margin-bottom: 8px;">Existence of zero vector: There exists a vector 0 such that v + 0 = v for all vectors v in the space.</li>
+                  <li style="margin-bottom: 8px;">Existence of additive inverse: For each vector v, there exists a vector -v such that v + (-v) = 0.</li>
+                </ul>
+                <div style="background-color: #f1eeff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                  <strong>Example:</strong> ℝ² (the plane) is a vector space where the vectors are ordered pairs of real numbers.
+                </div>
+              </div>
+            </div>
+            
+            <div class="textbook-section" style="margin-bottom: 30px; background-color: #f9fafb; padding: 25px; border-radius: 8px;">
+              <div class="textbook-section-title" style="font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #7161EF; padding-bottom: 8px;">5. Linear Independence</div>
+              <div class="textbook-section-content">
+                <p style="margin-bottom: 15px;">A set of vectors is linearly independent if none of them can be expressed as a linear combination of the others. Mathematically, vectors v₁, v₂, ..., vₙ are linearly independent if the equation:</p>
+                <div style="font-family: monospace; background: #f1f3f8; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #7161EF;">c₁v₁ + c₂v₂ + ... + cₙvₙ = 0</div>
+                <p style="margin-bottom: 15px;">has only the trivial solution c₁ = c₂ = ... = cₙ = 0.</p>
+                <p style="margin-bottom: 15px;">If a set of vectors is not linearly independent, then it is linearly dependent, which means at least one of the vectors can be expressed as a linear combination of the others.</p>
+                <div style="background-color: #f1eeff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                  <strong>Example:</strong> The vectors v₁ = (1, 0) and v₂ = (0, 1) are linearly independent in ℝ². However, if we add v₃ = (1, 1), the set {v₁, v₂, v₃} is linearly dependent because v₃ = v₁ + v₂.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Practice section -->
+    <div class="page-section" id="practice-section">
+      <div class="content">
+        <!-- Left sidebar with skill tree -->
+        <div style="width: 300px;">
+          <div class="skills-section">
+            <div class="skills-title">Skills</div>
+            
+            <!-- Clickable skill tree map -->
+            <div class="skill-tree-map" id="skill-tree-map-practice">
+              <!-- Circular skill map with nodes positioned in a more natural layout -->
+              <div class="skill-node completed" style="top: 120px; left: 120px;">1</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 150px; transform: rotate(30deg);"></div>
+              <div class="skill-node completed" style="top: 160px; left: 200px;">2</div>
+              <div class="skill-line completed" style="width: 70px; top: 140px; left: 200px; transform: rotate(-45deg);"></div>
+              <div class="skill-node active" style="top: 90px; left: 200px;">3</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 215px; transform: rotate(70deg);"></div>
+              <div class="skill-node" style="top: 220px; left: 240px;">4</div>
+              <div class="skill-line" style="width: 70px; top: 180px; left: 170px; transform: rotate(180deg);"></div>
+              <div class="skill-node" style="top: 200px; left: 110px;">5</div>
+              <div class="skill-line" style="width: 70px; top: 190px; left: 80px; transform: rotate(-45deg);"></div>
+              <div class="skill-node" style="top: 140px; left: 50px;">6</div>
+              <div class="skill-line" style="width: 70px; top: 110px; left: 80px; transform: rotate(45deg);"></div>
+              <div class="skill-node" style="top: 60px; left: 120px;">7</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right side content area -->
+        <div style="flex: 1;">
+          <!-- Tab navigation directly above content -->
+          <div class="main-tabs" style="margin-top: 0;">
+            <div class="main-tab" id="videos-btn-practice">Videos</div>
+            <div class="main-tab" id="textbook-btn-practice">Textbook</div>
+            <div class="main-tab active" id="practice-btn-practice">Practice</div>
+          </div>
+          
+          <h2 style="margin-top: 20px; margin-bottom: 20px;">Practice Problems: Vector Operations</h2>
+          
+          <!-- Practice progress bar -->
+          <div style="margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span>Progress: 2 of 5 completed</span>
+              <span>40%</span>
+            </div>
+            <div style="height: 8px; background-color: #e9ecef; border-radius: 4px;">
+              <div style="width: 40%; height: 100%; background-color: #7161EF; border-radius: 4px;"></div>
+            </div>
+          </div>
+          
+          <!-- Practice problems section -->
+          <div style="display: flex; flex-direction: column; gap: 30px;">
+            <!-- Problem 1 (completed) -->
+            <div style="padding: 25px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #2ecc71;">
+              <div style="margin-bottom: 15px;">
+                <span style="display: inline-block; width: 30px; height: 30px; background-color: #2ecc71; color: white; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px;">✓</span>
+                <span style="font-weight: 600; font-size: 18px;">Problem 1: Vector Components</span>
+              </div>
+              
+              <p style="margin-bottom: 15px;">Given the vector v = (3, -4), what is its magnitude?</p>
+              
+              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" value="5" style="padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; flex-grow: 1; max-width: 200px;" disabled>
+                <button style="padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 4px; cursor: pointer;" disabled>Submit</button>
+              </div>
+              
+              <div style="padding: 15px; background-color: #e9fff0; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 5px;">Correct!</div>
+                <p>The magnitude of vector v = (3, -4) is calculated as |v| = √(3² + (-4)²) = √(9 + 16) = √25 = 5</p>
+              </div>
+            </div>
+            
+            <!-- Problem 2 (completed) -->
+            <div style="padding: 25px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #2ecc71;">
+              <div style="margin-bottom: 15px;">
+                <span style="display: inline-block; width: 30px; height: 30px; background-color: #2ecc71; color: white; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px;">✓</span>
+                <span style="font-weight: 600; font-size: 18px;">Problem 2: Vector Addition</span>
+              </div>
+              
+              <p style="margin-bottom: 15px;">If u = (2, 5) and v = (1, -3), find the components of u + v.</p>
+              
+              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" value="(3, 2)" style="padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; flex-grow: 1; max-width: 200px;" disabled>
+                <button style="padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 4px; cursor: pointer;" disabled>Submit</button>
+              </div>
+              
+              <div style="padding: 15px; background-color: #e9fff0; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 5px;">Correct!</div>
+                <p>To add vectors, we add their corresponding components:<br>
+                u + v = (2, 5) + (1, -3) = (2+1, 5+(-3)) = (3, 2)</p>
+              </div>
+            </div>
+            
+            <!-- Problem 3 (current) -->
+            <div style="padding: 25px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #7161EF;">
+              <div style="margin-bottom: 15px;">
+                <span style="display: inline-block; width: 30px; height: 30px; background-color: #7161EF; color: white; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px;">3</span>
+                <span style="font-weight: 600; font-size: 18px;">Problem 3: Dot Product</span>
+              </div>
+              
+              <p style="margin-bottom: 15px;">Calculate the dot product of vectors a = (4, 2) and b = (3, 5).</p>
+              
+              <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" placeholder="Enter your answer" style="padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; flex-grow: 1; max-width: 200px;">
+                <button style="padding: 8px 16px; background: #7161EF; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit</button>
+              </div>
+              
+              <div style="padding: 15px; background-color: #f1eeff; border-radius: 6px;">
+                <div style="font-weight: 600; margin-bottom: 5px;">Hint:</div>
+                <p>The dot product of two vectors a = (a₁, a₂) and b = (b₁, b₂) is calculated as a·b = a₁b₁ + a₂b₂</p>
+              </div>
+            </div>
+            
+            <!-- Problem 4 (upcoming) -->
+            <div style="padding: 25px; border-radius: 8px; background-color: #f8faff; opacity: 0.7; border-left: 4px solid #dde1e6;">
+              <div style="margin-bottom: 15px;">
+                <span style="display: inline-block; width: 30px; height: 30px; background-color: #dde1e6; color: #666; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px;">4</span>
+                <span style="font-weight: 600; font-size: 18px;">Problem 4: Vector Scalar Multiplication</span>
+              </div>
+              
+              <p style="margin-bottom: 15px;">If v = (5, -2), find the components of 3v.</p>
+              
+              <div style="display: flex; gap: 10px;">
+                <input type="text" placeholder="Locked" style="padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; flex-grow: 1; max-width: 200px;" disabled>
+                <button style="padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 4px; cursor: pointer;" disabled>Submit</button>
+              </div>
+            </div>
+            
+            <!-- Problem 5 (upcoming) -->
+            <div style="padding: 25px; border-radius: 8px; background-color: #f8faff; opacity: 0.7; border-left: 4px solid #dde1e6;">
+              <div style="margin-bottom: 15px;">
+                <span style="display: inline-block; width: 30px; height: 30px; background-color: #dde1e6; color: #666; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px;">5</span>
+                <span style="font-weight: 600; font-size: 18px;">Problem 5: Vector Projection</span>
+              </div>
+              
+              <p style="margin-bottom: 15px;">Calculate the projection of vector a = (2, 3) onto vector b = (4, 0).</p>
+              
+              <div style="display: flex; gap: 10px;">
+                <input type="text" placeholder="Locked" style="padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; flex-grow: 1; max-width: 200px;" disabled>
+                <button style="padding: 8px 16px; background: #f1f3f5; border: none; border-radius: 4px; cursor: pointer;" disabled>Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Skills fullpage overlay -->
+  <div id="skills-fullpage">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <div class="skills-fullpage-header">
+        <div class="skills-fullpage-title">Skills Map</div>
+        <button class="close-fullpage-btn" id="close-skills">Back to Lesson</button>
+      </div>
+      
+      <div class="skills-fullpage-map">
+        <!-- Larger version of the skill map -->
+        <div class="skill-node completed" style="top: 240px; left: 240px; width: 60px; height: 60px; font-size: 20px;">1</div>
+        <div class="skill-line completed" style="width: 140px; top: 280px; left: 290px; transform: rotate(30deg); height: 3px;"></div>
+        <div class="skill-node completed" style="top: 320px; left: 400px; width: 60px; height: 60px; font-size: 20px;">2</div>
+        <div class="skill-line completed" style="width: 140px; top: 280px; left: 400px; transform: rotate(-45deg); height: 3px;"></div>
+        <div class="skill-node active" style="top: 180px; left: 400px; width: 60px; height: 60px; font-size: 20px;">3</div>
+        <div class="skill-line" style="width: 140px; top: 360px; left: 425px; transform: rotate(70deg); height: 3px;"></div>
+        <div class="skill-node" style="top: 440px; left: 470px; width: 60px; height: 60px; font-size: 20px;">4</div>
+        <div class="skill-line" style="width: 140px; top: 360px; left: 340px; transform: rotate(180deg); height: 3px;"></div>
+        <div class="skill-node" style="top: 400px; left: 220px; width: 60px; height: 60px; font-size: 20px;">5</div>
+        <div class="skill-line" style="width: 140px; top: 380px; left: 160px; transform: rotate(-45deg); height: 3px;"></div>
+        <div class="skill-node" style="top: 280px; left: 110px; width: 60px; height: 60px; font-size: 20px;">6</div>
+        <div class="skill-line" style="width: 140px; top: 220px; left: 160px; transform: rotate(45deg); height: 3px;"></div>
+        <div class="skill-node" style="top: 120px; left: 240px; width: 60px; height: 60px; font-size: 20px;">7</div>
+      </div>
+      
+      <div style="max-width: 800px; margin: 0 auto;">
+        <h2 style="margin-bottom: 20px;">Your Learning Path</h2>
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background-color: #2ecc71; border-radius: 50%;"></div>
+            <span>Completed</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background-color: #7161EF; border-radius: 50%;"></div>
+            <span>Current</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 16px; height: 16px; background-color: #dde1e6; border-radius: 50%;"></div>
+            <span>Upcoming</span>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="padding: 20px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #2ecc71;">
+            <h3 style="margin-bottom: 10px;">1. Introduction to Linear Algebra</h3>
+            <p>Foundation concepts and overview of the course material.</p>
+            <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">Completed • 2 weeks ago</div>
+          </div>
+          
+          <div style="padding: 20px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #2ecc71;">
+            <h3 style="margin-bottom: 10px;">2. Vector Basics</h3>
+            <p>Understanding vectors, their properties, and basic operations.</p>
+            <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">Completed • 1 week ago</div>
+          </div>
+          
+          <div style="padding: 20px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #7161EF;">
+            <h3 style="margin-bottom: 10px;">3. Vector Operations</h3>
+            <p>Advanced vector operations including dot product and cross product.</p>
+            <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">In Progress</div>
+          </div>
+          
+          <div style="padding: 20px; border-radius: 8px; background-color: #f8faff; border-left: 4px solid #dde1e6; opacity: 0.7;">
+            <h3 style="margin-bottom: 10px;">4. Vector Spaces</h3>
+            <p>Understanding vector spaces, subspaces, and their properties.</p>
+            <div style="margin-top: 10px; font-size: 14px; color: #6c757d;">Unlock after completing Vector Operations</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // DOMContentLoaded to ensure all elements are loaded before scripts run
+    document.addEventListener('DOMContentLoaded', function() {
+      // Main tab navigation
+      const videosBtn = document.getElementById('videos-btn');
+      const textbookBtn = document.getElementById('textbook-btn');
+      const practiceBtn = document.getElementById('practice-btn');
+      
+      const videosSection = document.getElementById('videos-section');
+      const textbookSection = document.getElementById('textbook-section');
+      const practiceSection = document.getElementById('practice-section');
+      
+      // Function to switch tabs
+      function switchTab(section) {
+        // Hide all sections
+        videosSection.style.display = 'none';
+        textbookSection.style.display = 'none';
+        practiceSection.style.display = 'none';
+        
+        // Show active section
+        section.style.display = 'block';
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('[id^="videos-btn"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        document.querySelectorAll('[id^="textbook-btn"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        document.querySelectorAll('[id^="practice-btn"]').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        
+        // Add active class to corresponding tabs
+        if (section === videosSection) {
+          document.querySelectorAll('[id^="videos-btn"]').forEach(btn => {
+            btn.classList.add('active');
+          });
+        } else if (section === textbookSection) {
+          document.querySelectorAll('[id^="textbook-btn"]').forEach(btn => {
+            btn.classList.add('active');
+          });
+        } else if (section === practiceSection) {
+          document.querySelectorAll('[id^="practice-btn"]').forEach(btn => {
+            btn.classList.add('active');
+          });
+        }
+      }
+      
+      // Video page tabs
+      videosBtn.addEventListener('click', function() {
+        switchTab(videosSection);
+      });
+      
+      textbookBtn.addEventListener('click', function() {
+        switchTab(textbookSection);
+      });
+      
+      practiceBtn.addEventListener('click', function() {
+        switchTab(practiceSection);
+      });
+      
+      // Textbook page tabs
+      document.getElementById('videos-btn-textbook').addEventListener('click', function() {
+        switchTab(videosSection);
+      });
+      
+      document.getElementById('textbook-btn-textbook').addEventListener('click', function() {
+        switchTab(textbookSection);
+      });
+      
+      document.getElementById('practice-btn-textbook').addEventListener('click', function() {
+        switchTab(practiceSection);
+      });
+      
+      // Practice page tabs
+      document.getElementById('videos-btn-practice').addEventListener('click', function() {
+        switchTab(videosSection);
+      });
+      
+      document.getElementById('textbook-btn-practice').addEventListener('click', function() {
+        switchTab(textbookSection);
+      });
+      
+      document.getElementById('practice-btn-practice').addEventListener('click', function() {
+        switchTab(practiceSection);
+      });
+      
+      // Skills map functionality
+      const skillMaps = document.querySelectorAll('[id^="skill-tree-map"]');
+      const skillsFullpage = document.getElementById('skills-fullpage');
+      const closeSkillsBtn = document.getElementById('close-skills');
+      
+      skillMaps.forEach(function(map) {
+        map.addEventListener('click', function() {
+          skillsFullpage.style.display = 'block';
+        });
+      });
+      
+      closeSkillsBtn.addEventListener('click', function() {
+        skillsFullpage.style.display = 'none';
+      });
+      
+      // Timestamps toggle
+      const timestampsHeader = document.getElementById('timestamps-toggle-header');
+      const timestampsList = document.getElementById('timestamps-list');
+      const timestampArrow = document.getElementById('timestamp-arrow');
+      let timestampsVisible = false;
+      
+      timestampsHeader.addEventListener('click', function() {
+        if (timestampsVisible) {
+          timestampsList.style.maxHeight = '0';
+          timestampsList.style.opacity = '0';
+          timestampsList.style.marginTop = '0';
+          timestampsList.style.overflow = 'hidden';
+          timestampArrow.style.transform = 'rotate(-90deg)';
+        } else {
+          timestampsList.style.maxHeight = '1000px';
+          timestampsList.style.opacity = '1';
+          timestampsList.style.marginTop = '10px';
+          timestampsList.style.overflow = 'visible';
+          timestampArrow.style.transform = 'rotate(0deg)';
+        }
+        
+        timestampsVisible = !timestampsVisible;
+      });
+      
+      // Timestamps click handling
+      const timestamps = document.querySelectorAll('.timestamp');
+      timestamps.forEach(function(timestamp) {
+        timestamp.addEventListener('click', function() {
+          const activeTimestamp = document.querySelector('.timestamp.active');
+          if (activeTimestamp) {
+            activeTimestamp.classList.remove('active');
+          }
+          timestamp.classList.add('active');
+          
+          // In a real implementation, this would seek to the timestamp in the video
+        });
+      });
+      
+      // Profile and skills icons
+      const profileIcons = document.querySelectorAll('.profile-header-icon');
+      const skillsIcons = document.querySelectorAll('.skills-header-icon');
+      
+      profileIcons.forEach(function(icon) {
+        icon.addEventListener('click', function() {
+          alert('Profile settings');
+        });
+      });
+      
+      skillsIcons.forEach(function(icon) {
+        icon.addEventListener('click', function() {
+          alert('Skills overview');
+        });
+      });
+      
+      // Save notes button
+      const saveNotesBtn = document.querySelector('.save-notes-btn');
+      saveNotesBtn.addEventListener('click', function() {
+        alert('Notes saved successfully!');
+      });
+    });
+  </script>
