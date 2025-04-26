@@ -24,7 +24,8 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY not found in environment variables.")
 # NOTE: Using genai.Client directly as per user instruction, even if configure might be preferred elsewhere.
 client = genai.Client(api_key=api_key)
-model = "gemini-2.0-flash-thinking-exp-01-21"
+# model = "gemini-2.0-flash-thinking-exp-01-21"
+model = "gemini-2.5-flash-preview-04-17"
 final_model = "gemini-2.5-pro-exp-03-25"
 
 # --- System Instructions (Unchanged) ---
