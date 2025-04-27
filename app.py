@@ -219,7 +219,7 @@ def start_diagnostic():
         initial_prompt += f" I'm {age} years old."
     if grade:
         initial_prompt += f" I'm in grade {grade}."
-    initial_prompt += " Can you help me figure out what I know and what I need to learn next? Let's start with some questions."
+    # initial_prompt += " Can you help me figure out what I know and what I need to learn next? Let's start with some questions."
 
     # Initial conversation history
     conversation_history = [{"role": "user", "content": initial_prompt}]
